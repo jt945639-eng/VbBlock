@@ -1,1 +1,12 @@
-
+[
+  {
+    "modid": "videoblocks",
+    "name": "Video Blocks",
+    "description": "Reproduce videos en el mundo usando un bloque por pixel, con resolucion ajustable.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "authorList": ["NotXoot"],
+    "credits": "Copyright (c) 2026 NotXoot. Todos los derechos reservados.",
+    "useDependencyInformation": false
+  }
+]
