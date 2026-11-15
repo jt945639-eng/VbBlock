@@ -1,0 +1,71 @@
+# Copyright (c) 2026 NotXoot. Todos los derechos reservados.
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  core-tests:
+    name: Pruebas del nucleo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Instalar ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Ejecutar pruebas
+        run: ./tools/smoke-test.sh
+
+  build:
+    name: Compilar el mod (Forge 1.12.2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      # ForgeGradle 2.3 necesita Gradle 4.9
+      - name: Instalar Gradle 4.9
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-4.9-bin.zip
+          unzip -q gradle-4.9-bin.zip -d "$HOME"
+          echo "$HOME/gradle-4.9/bin" >> "$GITHUB_PATH"
+      - name: Cache de Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('build.gradle') }}
+          restore-keys: gradle-
+      - name: Compilar
+        run: gradle setupCIWorkspace build --no-daemon
+      - name: Subir el .jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: VideoBlocks-jar
+          path: build/libs/*.jar
+
+  release:
+    name: Publicar release
+    needs: [core-tests, build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: VideoBlocks-jar
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.jar
