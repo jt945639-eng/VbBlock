@@ -21,7 +21,7 @@ jobs:
       - name: Instalar ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Ejecutar pruebas
-        run: ./tools/smoke-test.sh
+        run: bash tools/smoke-test.sh
 
   build:
     name: Compilar el mod (Forge 1.12.2)
