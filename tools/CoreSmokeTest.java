@@ -77,6 +77,16 @@ public class CoreSmokeTest {
         check(pal.get(pal.nearest(0, 0, 0)).name.equals("black"), "negro -> bloque negro");
         check(pal.get(pal.nearest(255, 255, 255)).name.equals("white"), "blanco -> bloque blanco");
 
+        // todo el video debe ser de bloques de supervivencia 1.12.2
+        Palette all = Palette.of("all");
+        boolean onlySurvival = all.size() == 48;
+        for (int i = 0; i < all.size(); i++) {
+            Palette.Entry e = all.get(i);
+            onlySurvival &= Palette.SURVIVAL_GROUPS.contains(e.group) && e.meta >= 0 && e.meta <= 15;
+        }
+        check(onlySurvival, "la paleta completa son 48 bloques: concrete/wool/terracotta con meta 0-15");
+        check(Palette.groupNames().equals(Palette.SURVIVAL_GROUPS), "no existen otros grupos de bloques");
+
         // ---------- lamparas ----------
         LampController c = new LampController();
         LampConfig cfg = new LampConfig();
@@ -89,6 +99,11 @@ public class CoreSmokeTest {
         drain(c);
         int[] b = bounds();
         check(world.size() == 32 * 18, "colocar lampara genera la pantalla: " + world.size() + " bloques");
+        boolean allBlocks = true;
+        for (Palette.Entry e : world.values()) {
+            allBlocks &= e != null && Palette.SURVIVAL_GROUPS.contains(e.group);
+        }
+        check(allBlocks, "los 576 pixeles son bloques de supervivencia, ninguno vacio (sin huecos ni barras no-bloque)");
         check(b[2] == 64 && b[3] == 64, "la pantalla es plana en la capa y=64 (suelo)");
         check(b[0] == 11 && b[1] == 11 + 17, "empieza justo delante de la lampara (x 11..28)");
         check(b[4] == 10 - 16 && b[5] == 10 + 15, "centrada en z (" + b[4] + ".." + b[5] + ")");

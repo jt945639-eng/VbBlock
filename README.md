@@ -48,10 +48,18 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
 - `palette`: `concrete`, `wool`, `terracotta` o `all`, combinables con comas.
 - `requireOp`: si es `true`, solo operadores (y el dueño del mundo en un jugador/LAN) usan lámparas y menú.
 
-## Bloques (todos de supervivencia)
-La pantalla solo usa bloques que se consiguen en modo supervivencia: **concrete** (polvo de concrete + agua), **lana**
-(ovejas y tinte) y, si lo activas en `palette`, **terracota** (arcilla cocida y tinte). No se usan bloques exclusivos de
-creativo. Es una pantalla decorativa: el mod la genera sin gastar bloques de tu inventario.
+## Bloques (todo el video es de bloques de supervivencia 1.12.2)
+Cada píxel del video es un **bloque real** del mundo (nada de mapas, entidades ni texturas). Solo se usan bloques completos
+de vanilla 1.12.2 que se consiguen en modo supervivencia, y el código rechaza cualquier otro:
+
+| Bloque | Cómo se consigue en supervivencia |
+|---|---|
+| **Concrete** (16 colores) | polvo de concrete (4 arena + 4 grava + 1 tinte) puesto en agua |
+| **Lana** (16 colores) | ovejas, o 4 hilos; se tiñe con tinte |
+| **Terracota** (16 colores, opcional en `palette`) | arcilla cocida en horno + 8 terracota y 1 tinte |
+
+Las barras negras (modo "respetar proporción") y el primer fotograma también son bloques (concrete negro). La pantalla
+la genera el mod sin gastar bloques de tu inventario.
 
 ## Notas
 - La pantalla reemplaza los bloques de su capa; al olvidar/romper la lámpara queda aire. Mejor sobre terreno plano.

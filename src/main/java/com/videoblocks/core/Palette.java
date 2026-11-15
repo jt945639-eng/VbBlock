@@ -11,7 +11,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Paleta de bloques de colores solidos. Convierte un color RGB en el bloque mas parecido.
+ * Paleta de bloques de colores solidos. Solo bloques de vanilla 1.12.2 que se consiguen en supervivencia:
+ * concrete (polvo de concrete + agua), lana (ovejas + tinte) y terracota (arcilla cocida + tinte).
+ * Convierte un color RGB en el bloque mas parecido.
  * Los colores son aproximaciones del promedio de cada textura; se pueden ajustar aqui.
  */
 public final class Palette {
@@ -71,6 +73,10 @@ public final class Palette {
         }
         return l;
     }
+
+    /** Grupos permitidos: todos son bloques completos de vanilla 1.12.2 obtenibles en supervivencia. */
+    public static final Set<String> SURVIVAL_GROUPS = new java.util.LinkedHashSet<String>(
+        java.util.Arrays.asList("concrete", "wool", "terracotta"));
 
     public static Set<String> groupNames() {
         return GROUPS.keySet();
