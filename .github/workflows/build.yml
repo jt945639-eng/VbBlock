@@ -1,4 +1,7 @@
 # Copyright (c) 2026 NotXoot. Todos los derechos reservados.
+#
+# Compila el mod igual que el proyecto de Half-Life: descarga el MDK oficial de Forge 1.12.2,
+# copia el src/ del repo dentro del MDK y usa el gradlew del propio MDK.
 name: Build
 
 on:
@@ -24,35 +27,49 @@ jobs:
         run: bash tools/smoke-test.sh
 
   build:
-    name: Compilar el mod (Forge 1.12.2)
+    name: Compilar el mod (MDK de Forge 1.12.2)
     runs-on: ubuntu-latest
+    env:
+      JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '8'
-      # ForgeGradle 2.3 necesita Gradle 4.9
-      - name: Instalar Gradle 4.9
+
+      - name: Descargar el MDK de Forge 1.12.2
         run: |
-          wget -q https://services.gradle.org/distributions/gradle-4.9-bin.zip
-          unzip -q gradle-4.9-bin.zip -d "$HOME"
-          echo "$HOME/gradle-4.9/bin" >> "$GITHUB_PATH"
-      - name: Cache de Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('build.gradle') }}
-          restore-keys: gradle-
+          curl -fL -o mdk.zip https://maven.minecraftforge.net/net/minecraftforge/forge/1.12.2-14.23.5.2860/forge-1.12.2-14.23.5.2860-mdk.zip
+          mkdir mdk && unzip -q mdk.zip -d mdk
+          ls -la mdk
+
+      - name: Poner el codigo del mod dentro del MDK
+        run: |
+          rm -rf mdk/src
+          mkdir -p mdk/src
+          cp -r src/. mdk/src/
+          echo "Archivos .java en el MDK: $(find mdk/src -name '*.java' | wc -l)"
+          sed -i 's/^version = .*/version = "1.0.0"/; s/^group = .*/group = "com.videoblocks"/; s/^archivesBaseName = .*/archivesBaseName = "VideoBlocks-1.12.2"/' mdk/build.gradle
+          grep -nE '^(version|group|archivesBaseName)' mdk/build.gradle
+
       - name: Compilar
-        run: gradle setupCIWorkspace build --no-daemon
-      - name: Subir el .jar
+        working-directory: mdk
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon --stacktrace
+
+      - name: Mostrar contenido del jar
+        run: |
+          ls -la mdk/build/libs
+          for f in mdk/build/libs/*.jar; do echo "== $f"; unzip -l "$f" | tail -15; done
+
+      - name: Guardar el .jar
         uses: actions/upload-artifact@v4
         with:
           name: VideoBlocks-jar
-          path: build/libs/*.jar
+          path: mdk/build/libs/*.jar
 
   release:
     name: Publicar release
