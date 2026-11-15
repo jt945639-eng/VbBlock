@@ -4,9 +4,18 @@
 package com.videoblocks.core;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-/** Mantiene la pantalla activa y las que se estan borrando (al quitar o cambiar de resolucion). */
+/**
+ * Varias pantallas a la vez, cada una con su clave. Reparte el presupuesto de bloques por tick
+ * entre ellas, y mientras se borra una pantalla vieja no se dibuja otra con la misma clave.
+ */
 public final class ScreenManager {
 
     public interface SinkProvider {
@@ -14,68 +23,119 @@ public final class ScreenManager {
         BlockSink get(int dim);
     }
 
-    private Screen active;
-    private final List<Screen> dying = new ArrayList<Screen>();
+    public static final class Msg {
+        public final String key, text;
 
-    public Screen active() {
-        return active;
+        public Msg(String key, String text) {
+            this.key = key;
+            this.text = text;
+        }
     }
 
-    public Screen create(int dim, int ax, int ay, int az, int dx, int dz, int w, int h,
+    private final Map<String, Screen> active = new LinkedHashMap<String, Screen>();
+    private final List<Screen> dying = new ArrayList<Screen>();
+
+    public Screen get(String key) {
+        return active.get(key);
+    }
+
+    public Collection<Screen> all() {
+        return new ArrayList<Screen>(active.values());
+    }
+
+    public Screen create(String key, int dim, int ax, int ay, int az, int dx, int dz, int w, int h,
                          boolean floor, Palette palette) {
-        remove();
-        active = Screen.create(dim, ax, ay, az, dx, dz, w, h, floor, palette);
-        return active;
+        remove(key);
+        Screen s = Screen.create(key, dim, ax, ay, az, dx, dz, w, h, floor, palette);
+        active.put(key, s);
+        return s;
     }
 
     /** Cambia la resolucion: borra la pantalla vieja y dibuja la nueva en el mismo lugar. */
-    public Screen resize(int w, int h) {
-        if (active == null) {
+    public Screen resize(String key, int w, int h) {
+        Screen old = active.get(key);
+        if (old == null) {
             return null;
         }
-        Screen old = active;
-        active = old.resized(w, h);
+        Screen n = old.resized(w, h);
+        active.put(key, n);
         old.kill();
         dying.add(old);
-        return active;
+        return n;
     }
 
-    public void remove() {
-        if (active != null) {
-            active.kill();
-            dying.add(active);
-            active = null;
+    /** Quita la pantalla y borra sus bloques. */
+    public void remove(String key) {
+        Screen s = active.remove(key);
+        if (s != null) {
+            s.kill();
+            dying.add(s);
         }
     }
 
-    /** Mientras se borra una pantalla vieja no se dibuja la nueva (evita que se pisen). */
+    /** Quita la pantalla de memoria (cierra ffmpeg) SIN borrar los bloques del mundo. */
+    public void detach(String key) {
+        Screen s = active.remove(key);
+        if (s != null) {
+            s.release();
+        }
+    }
+
     public void tick(SinkProvider sinks, int budget) {
-        if (!dying.isEmpty()) {
-            Screen s = dying.get(0);
+        int left = budget;
+        for (Iterator<Screen> it = dying.iterator(); it.hasNext() && left > 0; ) {
+            Screen s = it.next();
             BlockSink sink = sinks.get(s.dim);
-            if (sink == null || s.tick(sink, budget)) {
-                dying.remove(0);
+            if (sink == null) {
+                it.remove();
+                continue;
             }
-            return;
+            boolean done = s.tick(sink, left);
+            left -= s.lastApplied;
+            if (done) {
+                it.remove();
+            }
         }
-        if (active != null) {
-            BlockSink sink = sinks.get(active.dim);
-            if (sink != null) {
-                active.tick(sink, budget);
+        Set<String> blocked = new HashSet<String>();
+        for (Screen d : dying) {
+            blocked.add(d.key);
+        }
+        List<Screen> run = new ArrayList<Screen>();
+        for (Screen s : active.values()) {
+            if (!blocked.contains(s.key)) {
+                run.add(s);
             }
+        }
+        int r = run.size();
+        for (Screen s : run) {
+            int share = Math.max(0, left / r);
+            r--;
+            BlockSink sink = sinks.get(s.dim);
+            if (sink == null) {
+                continue;
+            }
+            s.tick(sink, share);
+            left -= s.lastApplied;
         }
     }
 
-    /** Mensaje pendiente de la pantalla activa (fin de video, errores de ffmpeg) o null. */
-    public String pollMessage() {
-        return active != null ? active.takeMessage() : null;
+    /** Mensajes pendientes de las pantallas (fin de video, errores de ffmpeg). */
+    public List<Msg> drainMessages() {
+        List<Msg> out = new ArrayList<Msg>();
+        for (Screen s : active.values()) {
+            String m = s.takeMessage();
+            if (m != null) {
+                out.add(new Msg(s.key, m));
+            }
+        }
+        return out;
     }
 
     public void shutdown() {
-        if (active != null) {
-            active.stop();
+        for (Screen s : active.values()) {
+            s.stop();
         }
-        active = null;
+        active.clear();
         for (Screen s : dying) {
             s.stop();
         }

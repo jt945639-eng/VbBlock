@@ -13,6 +13,7 @@ public final class Screen {
     public static final byte AIR = -1;
     public static final byte UNKNOWN = -2;
 
+    public final String key;
     public final int dim, ax, ay, az, dx, dz, w, h;
     public final boolean floor;
     public final Palette palette;
@@ -33,8 +34,11 @@ public final class Screen {
     private long framesShown;
     private double startOffset;
     private String message;
+    /** Bloques colocados en el ultimo tick. */
+    public int lastApplied;
 
-    private Screen(int dim, int ax, int ay, int az, int dx, int dz, int w, int h, boolean floor, Palette palette) {
+    private Screen(String key, int dim, int ax, int ay, int az, int dx, int dz, int w, int h, boolean floor, Palette palette) {
+        this.key = key;
         this.dim = dim;
         this.ax = ax;
         this.ay = ay;
@@ -73,14 +77,14 @@ public final class Screen {
      * @param ax,ay,az centro del borde inferior (pared) o del borde cercano (suelo)
      * @param dx,dz    direccion horizontal hacia la que mira el jugador (uno de ellos es +-1, el otro 0)
      */
-    public static Screen create(int dim, int ax, int ay, int az, int dx, int dz, int w, int h,
+    public static Screen create(String key, int dim, int ax, int ay, int az, int dx, int dz, int w, int h,
                                 boolean floor, Palette palette) {
-        return new Screen(dim, ax, ay, az, dx, dz, w, h, floor, palette);
+        return new Screen(key, dim, ax, ay, az, dx, dz, w, h, floor, palette);
     }
 
     /** Nueva pantalla con otra resolucion, mismo ancla, ajustes y video (continua donde iba). */
     public Screen resized(int nw, int nh) {
-        Screen s = new Screen(dim, ax, ay, az, dx, dz, nw, nh, floor, palette);
+        Screen s = new Screen(key, dim, ax, ay, az, dx, dz, nw, nh, floor, palette);
         s.fps = fps;
         s.loop = loop;
         s.fit = fit;
@@ -137,6 +141,11 @@ public final class Screen {
         input = null;
     }
 
+    /** Cierra ffmpeg sin tocar los bloques ya colocados. */
+    public void release() {
+        closeSource();
+    }
+
     public boolean isPlaying() {
         return source != null;
     }
@@ -170,7 +179,7 @@ public final class Screen {
 
     /** @return true si no queda nada pendiente por colocar. */
     public boolean tick(BlockSink sink, int budget) {
-        if (!dying && source != null && !paused) {
+        if (!dying && source != null && (!paused || framesShown == 0)) {
             acc = Math.min(acc + fps / 20.0, 2.0);
             if (acc >= 1.0) {
                 byte[] f = source.poll();
@@ -222,6 +231,7 @@ public final class Screen {
             }
         }
         cursor = i;
+        lastApplied = applied;
         return !pending;
     }
 

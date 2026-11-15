@@ -39,6 +39,9 @@ public final class FfmpegVideoSource {
         cmd.add("-hide_banner");
         cmd.add("-loglevel");
         cmd.add("error");
+        // Solo archivos locales y http(s): evita que ffmpeg abra otros protocolos.
+        cmd.add("-protocol_whitelist");
+        cmd.add("file,http,https,tcp,tls,crypto");
         if (startSeconds > 0.01) {
             cmd.add("-ss");
             cmd.add(String.format(java.util.Locale.ROOT, "%.3f", startSeconds));

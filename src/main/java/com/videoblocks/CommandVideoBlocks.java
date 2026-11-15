@@ -3,9 +3,11 @@
  */
 package com.videoblocks;
 
+import com.videoblocks.core.LampConfig;
 import com.videoblocks.core.Palette;
 import com.videoblocks.core.Screen;
 import com.videoblocks.core.ScreenManager;
+import com.videoblocks.core.VideoPaths;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,10 +24,15 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.TextComponentString;
 
+/**
+ * Comandos. Lo normal es usar el menu (tecla V) y las lamparas; los comandos "create/play/..."
+ * manejan una pantalla manual suelta (clave "manual") y sirven para probar rapido.
+ */
 public class CommandVideoBlocks extends CommandBase {
+    private static final String KEY = "manual";
     private static final List<String> SUBS = Arrays.asList(
-        "create", "resolution", "play", "pause", "resume", "stop", "fps", "fit", "dither", "gain",
-        "remove", "info");
+        "menu", "lamp", "create", "resolution", "play", "pause", "resume", "stop", "fps", "fit",
+        "dither", "gain", "remove", "info");
 
     @Override
     public String getName() {
@@ -39,7 +46,7 @@ public class CommandVideoBlocks extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/vblocks <create|resolution|play|pause|resume|stop|fps|fit|dither|gain|remove|info>";
+        return "/vblocks <menu|lamp|create|resolution|play|pause|resume|stop|fps|fit|dither|gain|remove|info>";
     }
 
     @Override
@@ -55,10 +62,14 @@ public class CommandVideoBlocks extends CommandBase {
         return new CommandException("%s", msg);
     }
 
+    private static ScreenManager screens() {
+        return VideoBlocksMod.LAMPS.screens;
+    }
+
     private static Screen need() throws CommandException {
-        Screen s = VideoBlocksMod.MANAGER.active();
+        Screen s = screens().get(KEY);
         if (s == null) {
-            throw fail("No hay pantalla. Crea una con /vblocks create <ancho> <alto> [wall|floor]");
+            throw fail("No hay pantalla manual. Crea una con /vblocks create <ancho> <alto> [wall|floor]");
         }
         return s;
     }
@@ -83,18 +94,22 @@ public class CommandVideoBlocks extends CommandBase {
     }
 
     private static String resolveInput(String name) throws CommandException {
-        String low = name.toLowerCase();
-        if (low.startsWith("http://") || low.startsWith("https://")) {
-            return name;
+        try {
+            return VideoPaths.resolve(name);
+        } catch (IllegalArgumentException ex) {
+            throw fail(ex.getMessage());
         }
-        File f = new File(name);
-        if (!f.isAbsolute() || !f.isFile()) {
-            f = new File("videos", name);
+    }
+
+    private static String joinFrom(String[] args, int from) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = from; i < args.length; i++) {
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append(args[i]);
         }
-        if (!f.isFile()) {
-            throw fail("No existe el archivo: " + f.getPath() + " (pon tus videos en la carpeta 'videos')");
-        }
-        return f.getAbsolutePath();
+        return sb.toString();
     }
 
     @Override
@@ -102,11 +117,25 @@ public class CommandVideoBlocks extends CommandBase {
         if (args.length == 0) {
             throw new WrongUsageException(getUsage(sender));
         }
-        ScreenManager m = VideoBlocksMod.MANAGER;
+        ScreenManager m = screens();
         String sub = args[0].toLowerCase();
-        int max = VideoBlocksMod.maxSide;
+        int max = VideoBlocksMod.LAMPS.maxSide;
 
         switch (sub) {
+            case "menu": {
+                ServerLogic.sendList(getCommandSenderAsPlayer(sender), true);
+                break;
+            }
+            case "lamp": {
+                if (args.length < 2) {
+                    throw new WrongUsageException("/vblocks lamp <archivo|url>  (luego ajusta resolución y más en el menú)");
+                }
+                EntityPlayerMP p = getCommandSenderAsPlayer(sender);
+                LampConfig cfg = new LampConfig();
+                cfg.src = joinFrom(args, 1);
+                ServerLogic.giveLamp(p, cfg);
+                break;
+            }
             case "create": {
                 if (args.length < 3) {
                     throw new WrongUsageException("/vblocks create <ancho> <alto> [wall|floor]");
@@ -130,11 +159,11 @@ public class CommandVideoBlocks extends CommandBase {
                 int ay = floor ? pos.getY() - 1 : pos.getY();
                 Palette pal;
                 try {
-                    pal = Palette.of(VideoBlocksMod.paletteSpec);
+                    pal = Palette.of(VideoBlocksMod.LAMPS.paletteSpec);
                 } catch (IllegalArgumentException ex) {
                     throw fail(ex.getMessage());
                 }
-                Screen s = m.create(p.dimension, ax, ay, az, d.getX(), d.getZ(), w, h, floor, pal);
+                Screen s = m.create(KEY, p.dimension, ax, ay, az, d.getX(), d.getZ(), w, h, floor, pal);
                 reply(sender, "Pantalla creada: " + s.describe());
                 reply(sender, "Ahora usa /vblocks play <archivo> [fps] [loop]");
                 break;
@@ -144,8 +173,8 @@ public class CommandVideoBlocks extends CommandBase {
                     throw new WrongUsageException("/vblocks resolution <ancho> <alto>");
                 }
                 need();
-                Screen s = m.resize(parseInt(args[1], 1, max), parseInt(args[2], 1, max));
-                reply(sender, "Resolucion cambiada: " + s.describe());
+                Screen s = m.resize(KEY, parseInt(args[1], 1, max), parseInt(args[2], 1, max));
+                reply(sender, "Resolución cambiada: " + s.describe());
                 break;
             }
             case "play": {
@@ -176,7 +205,7 @@ public class CommandVideoBlocks extends CommandBase {
                         fps = parseInt(args[i], 1, 20);
                     }
                 }
-                s.play(VideoBlocksMod.ffmpegPath, resolveInput(name.toString()), fps, loop, 0);
+                s.play(VideoBlocksMod.LAMPS.ffmpeg, resolveInput(name.toString()), fps, loop, 0);
                 reply(sender, "Reproduciendo: " + s.describe());
                 break;
             }
@@ -213,7 +242,7 @@ public class CommandVideoBlocks extends CommandBase {
                 Screen s = need();
                 s.fit = parseOnOff(args[1]);
                 s.restart();
-                reply(sender, "Ajuste: " + (s.fit ? "fit (respeta proporcion)" : "stretch (estira)"));
+                reply(sender, "Ajuste: " + (s.fit ? "fit (respeta proporción)" : "stretch (estira)"));
                 break;
             }
             case "dither": {
@@ -241,11 +270,11 @@ public class CommandVideoBlocks extends CommandBase {
             }
             case "remove":
                 need();
-                m.remove();
-                reply(sender, "Pantalla eliminada (se borran sus bloques).");
+                m.remove(KEY);
+                reply(sender, "Pantalla manual eliminada (se borran sus bloques).");
                 break;
             case "info":
-                reply(sender, need().describe() + " | max " + max + "x" + max
+                reply(sender, need().describe() + " | máx " + max + "x" + max
                     + ", " + VideoBlocksMod.blocksPerTick + " bloques/tick");
                 break;
             default:
@@ -269,7 +298,7 @@ public class CommandVideoBlocks extends CommandBase {
         if (args.length == 2 && sub.equals("gain")) {
             return getListOfStringsMatchingLastWord(args, "auto");
         }
-        if (args.length == 2 && sub.equals("play")) {
+        if (args.length == 2 && (sub.equals("play") || sub.equals("lamp"))) {
             List<String> names = new ArrayList<String>();
             File[] files = new File("videos").listFiles();
             if (files != null) {
