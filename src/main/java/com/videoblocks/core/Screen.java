@@ -31,6 +31,8 @@ public final class Screen {
     public boolean fit = true;
     public boolean autoGain = true;
     private double acc;
+    /** true = solo se muestra el primer fotograma y luego se cierra ffmpeg (imagen fija). */
+    private boolean posterOnly;
     private long framesShown;
     private double startOffset;
     private String message;
@@ -124,9 +126,17 @@ public final class Screen {
         this.framesShown = 0;
         this.acc = 0;
         this.paused = false;
+        this.posterOnly = false;
         this.message = null;
         source = new FfmpegVideoSource(ffmpegPath, in, w, h, fps, startSeconds, fit, loop, mapper);
         source.start();
+    }
+
+    /** Muestra solo el primer fotograma del video como imagen fija (hecha con bloques). */
+    public void showPoster(String ffmpegPath, String in, int fps) {
+        play(ffmpegPath, in, fps, false, 0);
+        posterOnly = true;
+        paused = true; // en pausa, pero el primer fotograma si se dibuja
     }
 
     /** Reinicia ffmpeg en el segundo actual (para aplicar cambios de fps / ajuste de imagen). */
@@ -144,6 +154,11 @@ public final class Screen {
     /** Cierra ffmpeg sin tocar los bloques ya colocados. */
     public void release() {
         closeSource();
+    }
+
+    /** true si la pantalla muestra solo el primer fotograma (sin video en marcha). */
+    public boolean isPoster() {
+        return posterOnly;
     }
 
     public boolean isPlaying() {
@@ -187,6 +202,9 @@ public final class Screen {
                     acc -= 1.0;
                     target = f;
                     framesShown++;
+                    if (posterOnly) {
+                        closeSource(); // ya tenemos el primer fotograma: la imagen queda fija sin ffmpeg
+                    }
                 } else if (f == null && source.isFinished()) {
                     String err = source.error();
                     message = err != null ? "Error de video: " + err : "Reproduccion terminada.";

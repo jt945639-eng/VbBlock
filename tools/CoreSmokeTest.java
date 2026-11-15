@@ -94,19 +94,51 @@ public class CoreSmokeTest {
         check(b[4] == 10 - 16 && b[5] == 10 + 15, "centrada en z (" + b[4] + ".." + b[5] + ")");
         check(!world.containsKey("10,64,10"), "la lampara misma no se pisa");
 
+        // referencia: primer fotograma (lampara en modo nivel, sin senal, misma posicion)
+        Map<String, Palette.Entry> snapshot = new HashMap<String, Palette.Entry>(world);
+        world.clear();
+        LampController cRef = new LampController();
+        LampConfig refCfg = lamp.cfg.copy(); refCfg.mode = LampConfig.MODE_LEVEL;
+        cRef.add(0, 10, 64, 10, 1, 0, "ref", refCfg);
+        tickFor(cRef, 1200); drain(cRef);
+        Map<String, Palette.Entry> firstFrame = new HashMap<String, Palette.Entry>(world);
+        check(firstFrame.size() == 32 * 18, "sin senal (modo nivel) la pantalla muestra el primer fotograma: " + firstFrame.size() + " bloques");
+        check(cRef.screens.get(cRef.list().iterator().next().id).isPoster() && !cRef.screens.get(cRef.list().iterator().next().id).isPlaying(),
+            "el primer fotograma es imagen fija (ffmpeg cerrado)");
+        cRef.clear();
+        world.clear(); world.putAll(snapshot);
+
         // pulso: flanco de subida alterna
-        powered = true; tickFor(c, 100);
+        powered = true; tickFor(c, 100); drain(c);
         check(!lamp.on, "pulso 1 -> detenida");
+        check(world.equals(firstFrame), "al detener vuelve al primer fotograma (no se queda negra ni congelada)");
+        check(!c.screens.get(lamp.id).isPlaying(), "detenida: ffmpeg cerrado, imagen fija");
         powered = false; tickFor(c, 800);
         check(!lamp.on, "bajar la senal no cambia el estado en modo pulso");
         int hStop = world.hashCode();
         tickFor(c, 800);
         check(world.hashCode() == hStop, "detenida: la imagen no cambia");
         powered = true; tickFor(c, 100);
-        check(lamp.on, "pulso 2 -> reproduciendo");
+        check(lamp.on && c.screens.get(lamp.id).isPlaying() && !c.screens.get(lamp.id).isPoster(), "pulso 2 -> reproduciendo desde el inicio");
         powered = false;
         tickFor(c, 1200);
         check(world.hashCode() != hStop, "al reanudar la imagen vuelve a cambiar");
+
+        // modo congelar: al detener se queda el fotograma actual
+        LampConfig fz = lamp.cfg.copy(); fz.stopMode = LampConfig.STOP_FREEZE;
+        c.update(lamp.id, fz);
+        tickFor(c, 700);
+        Map<String, Palette.Entry> beforeStop = null;
+        powered = true; tickFor(c, 60); powered = false; tickFor(c, 20);
+        check(!lamp.on, "modo congelar: pulso -> detenida");
+        drain(c);
+        beforeStop = new HashMap<String, Palette.Entry>(world);
+        tickFor(c, 600);
+        check(world.equals(beforeStop), "modo congelar: la imagen se queda quieta");
+        powered = true; tickFor(c, 60); powered = false; tickFor(c, 20);
+        check(lamp.on, "modo congelar: pulso -> reanuda");
+        LampConfig back = lamp.cfg.copy(); back.stopMode = LampConfig.STOP_POSTER;
+        c.update(lamp.id, back);
 
         // modo nivel
         LampConfig lv = lamp.cfg.copy(); lv.mode = LampConfig.MODE_LEVEL;
@@ -126,6 +158,24 @@ public class CoreSmokeTest {
         drain(c);
         check(world.size() == 16 * 9, "resolucion en caliente 16x9: " + world.size() + " bloques");
         check(c.screens.get(lamp.id).isPlaying(), "el video sigue tras cambiar la resolucion");
+
+        // detenida + cambio de resolucion: la pantalla nueva tambien muestra el primer fotograma
+        LampConfig st = lamp.cfg.copy(); st.mode = LampConfig.MODE_PULSE;
+        c.update(lamp.id, st);
+        powered = false; tickFor(c, 50);
+        powered = true; tickFor(c, 60); powered = false; tickFor(c, 20);   // pulso -> detener
+        check(!lamp.on, "pulso -> detenida (antes de cambiar resolucion)");
+        LampConfig rs2 = lamp.cfg.copy(); rs2.w = 24; rs2.h = 12;
+        c.update(lamp.id, rs2);
+        tickFor(c, 1200); drain(c);
+        check(world.size() == 24 * 12 && c.screens.get(lamp.id).isPoster(),
+            "detenida y cambio a 24x12: se dibuja el primer fotograma (" + world.size() + " bloques)");
+        LampConfig rs3 = lamp.cfg.copy(); rs3.w = 16; rs3.h = 9;
+        c.update(lamp.id, rs3);
+        tickFor(c, 1200); drain(c);
+        powered = true; tickFor(c, 60); powered = false; tickFor(c, 20);   // pulso -> reanudar
+        check(lamp.on, "pulso -> reproduce otra vez");
+        tickFor(c, 600);
 
         // chunk descargado: se suspende pero no se borra
         loaded = false; tickFor(c, 100);

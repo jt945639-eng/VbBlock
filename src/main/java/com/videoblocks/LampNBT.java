@@ -23,6 +23,7 @@ public final class LampNBT {
         t.setBoolean("fit", c.fit);
         t.setBoolean("dither", c.dither);
         t.setInteger("mode", c.mode);
+        t.setInteger("stop", c.stopMode);
         return t;
     }
 
@@ -47,6 +48,7 @@ public final class LampNBT {
         }
         c.dither = t.getBoolean("dither");
         c.mode = t.getInteger("mode");
+        c.stopMode = t.getInteger("stop");
         return c.sanitize(VideoBlocksMod.LAMPS.maxSide);
     }
 

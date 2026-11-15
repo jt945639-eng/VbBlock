@@ -25,14 +25,14 @@ import org.lwjgl.input.Keyboard;
  */
 @SideOnly(Side.CLIENT)
 public class GuiLampEditor extends GuiScreen {
-    private static final int B_OK = 0, B_CANCEL = 1, B_BROWSE = 2, B_LOOP = 3, B_FIT = 4, B_MODE = 5, B_DITHER = 6;
+    private static final int B_OK = 0, B_CANCEL = 1, B_BROWSE = 2, B_LOOP = 3, B_FIT = 4, B_MODE = 5, B_DITHER = 6, B_STOP = 7;
 
     private final GuiScreen parent;
     private final String editId;
     private final LampConfig cfg;
 
     private GuiTextField fSrc, fTitle, fW, fH, fFps;
-    private GuiButton bLoop, bFit, bMode, bDither;
+    private GuiButton bLoop, bFit, bMode, bDither, bStop;
     private String status = "";
 
     private volatile String picked;
@@ -50,7 +50,7 @@ public class GuiLampEditor extends GuiScreen {
         Keyboard.enableRepeatEvents(true);
         buttonList.clear();
         int cx = width / 2;
-        int y0 = Math.max(8, height / 2 - 105);
+        int y0 = Math.max(8, height / 2 - 115);
 
         fSrc = new GuiTextField(10, fontRenderer, cx - 150, y0 + 12, 235, 18);
         fSrc.setMaxStringLength(500);
@@ -78,9 +78,11 @@ public class GuiLampEditor extends GuiScreen {
         buttonList.add(bFit);
         buttonList.add(bMode);
         buttonList.add(bDither);
-        buttonList.add(new GuiButton(B_OK, cx - 150, y0 + 162, 148, 20,
+        bStop = new GuiButton(B_STOP, cx - 150, y0 + 158, 300, 20, "");
+        buttonList.add(bStop);
+        buttonList.add(new GuiButton(B_OK, cx - 150, y0 + 186, 148, 20,
             editId == null ? "Crear lámpara" : "Guardar cambios"));
-        buttonList.add(new GuiButton(B_CANCEL, cx + 2, y0 + 162, 148, 20, "Cancelar"));
+        buttonList.add(new GuiButton(B_CANCEL, cx + 2, y0 + 186, 148, 20, "Cancelar"));
         refreshLabels();
     }
 
@@ -89,6 +91,8 @@ public class GuiLampEditor extends GuiScreen {
         bFit.displayString = "Imagen: " + (cfg.fit ? "Respetar proporción" : "Estirar");
         bMode.displayString = "Redstone: " + (cfg.mode == LampConfig.MODE_LEVEL ? "Mientras haya señal" : "Cada pulso alterna");
         bDither.displayString = "Dithering: " + (cfg.dither ? "Sí" : "No");
+        bStop.displayString = "Al detener: " + (cfg.stopMode == LampConfig.STOP_POSTER
+            ? "volver al primer fotograma" : "dejar la imagen congelada");
     }
 
     private static int parse(GuiTextField f, int def) {
@@ -179,6 +183,10 @@ public class GuiLampEditor extends GuiScreen {
                 cfg.dither = !cfg.dither;
                 refreshLabels();
                 break;
+            case B_STOP:
+                cfg.stopMode = cfg.stopMode == LampConfig.STOP_POSTER ? LampConfig.STOP_FREEZE : LampConfig.STOP_POSTER;
+                refreshLabels();
+                break;
             case B_CANCEL:
                 mc.displayGuiScreen(parent);
                 break;
@@ -262,7 +270,7 @@ public class GuiLampEditor extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
         int cx = width / 2;
-        int y0 = Math.max(8, height / 2 - 105);
+        int y0 = Math.max(8, height / 2 - 115);
         drawCenteredString(fontRenderer, editId == null ? "Nueva lámpara de video" : "Editar lámpara de video",
             cx, y0 - 6, 0xFFFFFF);
         drawString(fontRenderer, "Video: archivo del PC o URL (http/https)", cx - 150, y0 + 2, 0xAAAAAA);
@@ -276,9 +284,9 @@ public class GuiLampEditor extends GuiScreen {
         fH.drawTextBox();
         fFps.drawTextBox();
         if (!status.isEmpty()) {
-            drawCenteredString(fontRenderer, status, cx, y0 + 188, 0xFF5555);
+            drawCenteredString(fontRenderer, status, cx, y0 + 212, 0xFF5555);
         } else if (choosing) {
-            drawCenteredString(fontRenderer, "Abriendo el selector de archivos...", cx, y0 + 188, 0xFFFF55);
+            drawCenteredString(fontRenderer, "Abriendo el selector de archivos...", cx, y0 + 212, 0xFFFF55);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
     }

@@ -103,11 +103,13 @@ public final class LampController {
             return;
         }
         if (on) {
-            if (!s.isPlaying()) {
+            if (!s.isPlaying() || s.isPoster()) {
                 startPlay(e, s);
             } else {
                 s.paused = false;
             }
+        } else if (e.cfg.stopMode == LampConfig.STOP_POSTER) {
+            showPoster(e, s);
         } else {
             s.paused = true;
         }
@@ -135,9 +137,29 @@ public final class LampController {
         }
         s.fit = nc.fit;
         s.mapper.dither = nc.dither;
-        if (!old.sameVideo(nc)) {
+        boolean resized = old.w != nc.w || old.h != nc.h;
+        if (!old.sameVideo(nc) || (resized && !e.on)) {
+            applyState(e, s);
+        }
+    }
+
+    /** Pone la pantalla en el estado que le toca: reproduciendo, o en reposo (primer fotograma / congelada). */
+    private void applyState(LampEntry e, Screen s) {
+        if (e.on) {
             startPlay(e, s);
-            s.paused = !e.on;
+        } else if (e.cfg.stopMode == LampConfig.STOP_POSTER) {
+            showPoster(e, s);
+        } else {
+            startPlay(e, s);
+            s.paused = true;
+        }
+    }
+
+    private void showPoster(LampEntry e, Screen s) {
+        try {
+            s.showPoster(ffmpeg, VideoPaths.resolve(e.cfg.src), e.cfg.fps);
+        } catch (IllegalArgumentException ex) {
+            messages.add(new ScreenManager.Msg(e.id, ex.getMessage()));
         }
     }
 
@@ -188,8 +210,7 @@ public final class LampController {
             Screen s = screens.get(e.id);
             if (s == null) {
                 s = buildScreen(e);
-                startPlay(e, s);
-                s.paused = !e.on;
+                applyState(e, s);
             }
             boolean p = wa.isPowered(e.dim, e.x, e.y, e.z);
             Boolean last = lastPowered.put(e.id, p);

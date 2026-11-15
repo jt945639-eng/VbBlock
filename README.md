@@ -20,8 +20,11 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
 4. **Colócala en el suelo** mirando hacia donde quieres la pantalla: se genera una pantalla plana,
    en la capa de la lámpara y justo delante de ella, y el video empieza a reproducirse.
 5. **Redstone** (palanca, botón, comparador, lo que sea):
-   - *Cada pulso alterna* (por defecto): cada señal nueva detiene o reanuda el video.
+   - *Cada pulso alterna* (por defecto): cada señal nueva detiene el video o lo reproduce de nuevo desde el inicio.
    - *Mientras haya señal*: reproduce con señal y se detiene sin ella.
+   - **Nunca queda una pantalla negra:** cuando la lámpara está detenida (o se coloca sin señal en modo "mientras haya señal")
+     la pantalla muestra el **primer fotograma del video** hecho con bloques. En el editor puedes elegir en su lugar
+     *dejar la imagen congelada* en el fotograma donde se detuvo.
 6. El **menú** guarda todas las lámparas del mundo: iniciar/detener (`>` / `||`), **Editar** (resolución en caliente,
    video, modo...), **Ir** (te teletransporta), **Dar** (copia de la lámpara con su video) y **X** (olvidar y borrar la pantalla).
 
@@ -44,6 +47,11 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
 - `blocksPerTick`: tope de bloques cambiados por tick entre todas las pantallas (5000). Bájalo si hay lag.
 - `palette`: `concrete`, `wool`, `terracotta` o `all`, combinables con comas.
 - `requireOp`: si es `true`, solo operadores (y el dueño del mundo en un jugador/LAN) usan lámparas y menú.
+
+## Bloques (todos de supervivencia)
+La pantalla solo usa bloques que se consiguen en modo supervivencia: **concrete** (polvo de concrete + agua), **lana**
+(ovejas y tinte) y, si lo activas en `palette`, **terracota** (arcilla cocida y tinte). No se usan bloques exclusivos de
+creativo. Es una pantalla decorativa: el mod la genera sin gastar bloques de tu inventario.
 
 ## Notas
 - La pantalla reemplaza los bloques de su capa; al olvidar/romper la lámpara queda aire. Mejor sobre terreno plano.

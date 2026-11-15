@@ -10,11 +10,17 @@ public final class LampConfig {
     /** Reproduce mientras haya senal de Redstone y se detiene cuando no hay. */
     public static final int MODE_LEVEL = 1;
 
+    /** Al detener, la pantalla vuelve al primer fotograma del video. */
+    public static final int STOP_POSTER = 0;
+    /** Al detener, la pantalla se queda congelada en el fotograma actual. */
+    public static final int STOP_FREEZE = 1;
+
     public String src = "";
     public String title = "";
     public int w = 128, h = 72, fps = 10;
     public boolean loop = true, fit = true, dither = false;
     public int mode = MODE_PULSE;
+    public int stopMode = STOP_POSTER;
 
     public LampConfig copy() {
         LampConfig c = new LampConfig();
@@ -27,6 +33,7 @@ public final class LampConfig {
         c.fit = fit;
         c.dither = dither;
         c.mode = mode;
+        c.stopMode = stopMode;
         return c;
     }
 
@@ -42,6 +49,7 @@ public final class LampConfig {
         h = clamp(h, 1, maxSide);
         fps = clamp(fps, 1, 20);
         mode = clamp(mode, 0, 1);
+        stopMode = clamp(stopMode, 0, 1);
         if (title.isEmpty()) {
             String t = src;
             int cut = Math.max(t.lastIndexOf('/'), t.lastIndexOf('\\'));
