@@ -69,7 +69,7 @@ public class CommandVideoBlocks extends CommandBase {
     private static Screen need() throws CommandException {
         Screen s = screens().get(KEY);
         if (s == null) {
-            throw fail("No hay pantalla manual. Crea una con /vblocks create <ancho> <alto> [wall|floor]");
+            throw fail("No hay pantalla manual. Crea una con /vblocks create <ancho> <alto> [floor|wall]");
         }
         return s;
     }
@@ -138,16 +138,17 @@ public class CommandVideoBlocks extends CommandBase {
             }
             case "create": {
                 if (args.length < 3) {
-                    throw new WrongUsageException("/vblocks create <ancho> <alto> [wall|floor]");
+                    throw new WrongUsageException("/vblocks create <ancho> <alto> [floor|wall]");
                 }
                 int w = parseInt(args[1], 1, max);
                 int h = parseInt(args[2], 1, max);
-                boolean floor = false;
+                // Por defecto la pantalla va acostada en el suelo; "wall" (vertical) es opcional.
+                boolean floor = true;
                 if (args.length > 3) {
-                    if (args[3].equalsIgnoreCase("floor")) {
-                        floor = true;
-                    } else if (!args[3].equalsIgnoreCase("wall")) {
-                        throw new WrongUsageException("/vblocks create <ancho> <alto> [wall|floor]");
+                    if (args[3].equalsIgnoreCase("wall")) {
+                        floor = false;
+                    } else if (!args[3].equalsIgnoreCase("floor")) {
+                        throw new WrongUsageException("/vblocks create <ancho> <alto> [floor|wall]");
                     }
                 }
                 EntityPlayerMP p = getCommandSenderAsPlayer(sender);
@@ -290,7 +291,7 @@ public class CommandVideoBlocks extends CommandBase {
         }
         String sub = args[0].toLowerCase();
         if (args.length == 4 && sub.equals("create")) {
-            return getListOfStringsMatchingLastWord(args, "wall", "floor");
+            return getListOfStringsMatchingLastWord(args, "floor", "wall");
         }
         if (args.length == 2 && (sub.equals("fit") || sub.equals("dither"))) {
             return getListOfStringsMatchingLastWord(args, "on", "off");

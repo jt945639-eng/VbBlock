@@ -17,8 +17,9 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
 2. **Nueva lámpara** → elige el video con **Examinar...** (archivo de tu PC) o pega una **URL** (http/https),
    y ajusta nombre, resolución (ancho × alto en bloques), FPS, bucle, ajuste de imagen y modo de Redstone.
 3. **Crear lámpara**: el video queda marcado y la lámpara llega a tu inventario.
-4. **Colócala en el suelo** mirando hacia donde quieres la pantalla: se genera una pantalla plana,
-   en la capa de la lámpara y justo delante de ella, y el video empieza a reproducirse.
+4. **Colócala en el suelo** mirando hacia donde quieres la pantalla: la pantalla se genera **acostada en el suelo**
+   (horizontal, nunca de pie), a la altura de la lámpara y justo delante de ella, con la parte de arriba del video
+   hacia donde miras, y el video empieza a reproducirse.
 5. **Redstone** (palanca, botón, comparador, lo que sea):
    - *Cada pulso alterna* (por defecto): cada señal nueva detiene el video o lo reproduce de nuevo desde el inicio.
    - *Mientras haya señal*: reproduce con señal y se detiene sin ella.
@@ -39,7 +40,7 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
 |---|---|
 | `/vblocks menu` | Abre el menú |
 | `/vblocks lamp <archivo\|url>` | Te da una lámpara con ese video (ajustes por defecto) |
-| `/vblocks create <ancho> <alto> [wall\|floor]` + `play`, `resolution`, `pause`, `resume`, `stop`, `fps`, `fit`, `dither`, `gain`, `remove`, `info` | Una pantalla manual suelta, útil para pruebas |
+| `/vblocks create <ancho> <alto> [floor\|wall]` (por defecto `floor`, acostada en el suelo) + `play`, `resolution`, `pause`, `resume`, `stop`, `fps`, `fit`, `dither`, `gain`, `remove`, `info` | Una pantalla manual suelta, útil para pruebas |
 
 ## Configuración (`config/videoblocks.cfg`)
 - `ffmpegPath`: ruta de ffmpeg.
