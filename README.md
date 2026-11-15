@@ -2,49 +2,72 @@
 
 Copyright (c) 2026 NotXoot. Todos los derechos reservados.
 
-Reproduce videos dentro del mundo usando **un bloque por píxel**, con resolución ajustable
-mientras el video está corriendo.
+Reproduce videos dentro del mundo usando **un bloque por píxel**, con la resolución que quieras.
+Eliges el video (archivo de tu PC o URL), el mod te da una **lámpara de Redstone** especial, y al
+colocarla en el suelo **genera la pantalla** y empieza a reproducir. Cualquier señal de Redstone
+activa y detiene el video, y un **menú** guarda todas las lámparas.
 
 ## Requisitos
-- Minecraft 1.12.2 + Forge 14.23.5.2860
+- Minecraft 1.12.2 + Forge 14.23.5.2860 (el mod va en cliente **y** servidor)
 - **ffmpeg** instalado (en el PATH o con la ruta en `config/videoblocks.cfg`)
-- Permisos de operador (nivel 2). En un mundo de un jugador: crear el mundo con trucos activados.
-- Es un mod **de servidor**: en multijugador solo hay que instalarlo en el servidor
-  (los clientes vanilla pueden entrar). En un solo jugador, instalarlo normalmente.
+- Ser operador (o el dueño del mundo en un solo jugador / LAN). Configurable con `requireOp`.
 
-## Compilar
-1. Descarga el MDK oficial de Forge 1.12.2 (14.23.5.2860) y ábrelo con JDK 8.
-2. Reemplaza su `src/` por el de este proyecto y copia este `build.gradle`
-   (o conserva el del MDK y solo cambia `version`, `group` y `archivesBaseName`).
-3. `gradlew build` → el `.jar` queda en `build/libs/`.
+## Cómo se usa
+1. Pulsa **V** (tecla configurable en Controles → Video Blocks) para abrir el menú de lámparas.
+2. **Nueva lámpara** → elige el video con **Examinar...** (archivo de tu PC) o pega una **URL** (http/https),
+   y ajusta nombre, resolución (ancho × alto en bloques), FPS, bucle, ajuste de imagen y modo de Redstone.
+3. **Crear lámpara**: el video queda marcado y la lámpara llega a tu inventario.
+4. **Colócala en el suelo** mirando hacia donde quieres la pantalla: se genera una pantalla plana,
+   en la capa de la lámpara y justo delante de ella, y el video empieza a reproducirse.
+5. **Redstone** (palanca, botón, comparador, lo que sea):
+   - *Cada pulso alterna* (por defecto): cada señal nueva detiene o reanuda el video.
+   - *Mientras haya señal*: reproduce con señal y se detiene sin ella.
+6. El **menú** guarda todas las lámparas del mundo: iniciar/detener (`>` / `||`), **Editar** (resolución en caliente,
+   video, modo...), **Ir** (te teletransporta), **Dar** (copia de la lámpara con su video) y **X** (olvidar y borrar la pantalla).
 
-## Uso
-Pon tus videos en la carpeta `videos/` (junto a `mods/`) y, dentro del juego:
+### Videos del PC, URL y servidores
+- **Un jugador / LAN:** cualquier archivo de tu PC funciona.
+- **URL:** funciona siempre (enlaces directos a `.mp4`, `.webm`, etc.; no páginas de YouTube).
+- **Servidor dedicado:** el servidor es quien lee el archivo, así que usa una URL o archivos que estén en la carpeta
+  `videos/` del servidor (el selector del PC solo sirve si el servidor corre en tu mismo PC).
 
+## Comandos (opcionales)
 | Comando | Qué hace |
 |---|---|
-| `/vblocks create <ancho> <alto> [wall\|floor]` | Crea la pantalla frente a ti. `wall` = pared vertical, `floor` = plana en el suelo |
-| `/vblocks play <archivo\|url> [fps 1-20] [loop]` | Reproduce un video (por defecto 10 fps) |
-| `/vblocks resolution <ancho> <alto>` | Cambia la resolución en caliente; el video sigue donde iba |
-| `/vblocks pause` · `resume` · `stop` | Control de reproducción |
-| `/vblocks fps <1-20>` | Cambia los fps |
-| `/vblocks fit <on\|off>` | `on` respeta la proporción (barras negras), `off` estira |
-| `/vblocks dither <on\|off>` | Dithering: más colores aparentes, más bloques cambiando por frame |
-| `/vblocks gain <0.25-4\|auto>` | Brillo previo (compensa el sombreado de caras de los bloques) |
-| `/vblocks remove` | Borra la pantalla y sus bloques |
-| `/vblocks info` | Estado actual |
-
-Alias: `/videoblocks`. Ejemplo: `/vblocks create 128 72 floor` y luego `/vblocks play mi_video.mp4 10 loop`.
+| `/vblocks menu` | Abre el menú |
+| `/vblocks lamp <archivo\|url>` | Te da una lámpara con ese video (ajustes por defecto) |
+| `/vblocks create <ancho> <alto> [wall\|floor]` + `play`, `resolution`, `pause`, `resume`, `stop`, `fps`, `fit`, `dither`, `gain`, `remove`, `info` | Una pantalla manual suelta, útil para pruebas |
 
 ## Configuración (`config/videoblocks.cfg`)
 - `ffmpegPath`: ruta de ffmpeg.
 - `maxSide`: ancho/alto máximo de una pantalla (256 por defecto).
-- `blocksPerTick`: tope de bloques cambiados por tick (5000). Bájalo si hay lag.
+- `blocksPerTick`: tope de bloques cambiados por tick entre todas las pantallas (5000). Bájalo si hay lag.
 - `palette`: `concrete`, `wool`, `terracotta` o `all`, combinables con comas.
+- `requireOp`: si es `true`, solo operadores (y el dueño del mundo en un jugador/LAN) usan lámparas y menú.
 
 ## Notas
-- Las pantallas tipo `floor` se ven con el color más fiel (la cara superior no se oscurece);
-  en `wall` las caras laterales se ven más oscuras y el mod lo compensa con `gain auto`.
-- Altura máxima del mundo: 255; lo que se salga se recorta.
-- No incluye audio. Los bloques que había antes en la zona se reemplazan y, al borrar, quedan como aire.
-- Una pantalla activa por servidor.
+- La pantalla reemplaza los bloques de su capa; al olvidar/romper la lámpara queda aire. Mejor sobre terreno plano.
+- Romper el bloque de la lámpara borra su pantalla y la quita del menú. Si el chunk se descarga, la pantalla se
+  suspende y se reanuda al volver.
+- Las pantallas en el suelo muestran los colores más fieles (la cara superior no se oscurece).
+- No incluye audio.
+
+## Compilar
+**Con GitHub (recomendado):** al subir el proyecto, el workflow `.github/workflows/build.yml` corre las pruebas del núcleo
+y compila el mod con Gradle 4.9 + JDK 8. El `.jar` queda en *Actions → Build → Artifacts*. Si creas una *tag* `v1.0.0`
+(`git tag v1.0.0 && git push --tags`) también se publica como *Release*.
+
+**En tu PC:** JDK 8 + Gradle 4.9 (o el `gradlew` del MDK oficial de Forge 1.12.2) → `gradle setupDecompWorkspace build`;
+el `.jar` queda en `build/libs/`.
+
+**Pruebas del núcleo (sin Minecraft):** `./tools/smoke-test.sh` (necesita JDK y ffmpeg).
+
+## Subir a GitHub
+```bash
+git init
+git add .
+git commit -m "Video Blocks 1.0.0"
+git branch -M main
+git remote add origin https://github.com/<tu-usuario>/<tu-repo>.git
+git push -u origin main
+```
