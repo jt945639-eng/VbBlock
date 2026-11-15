@@ -148,8 +148,8 @@ public class GuiLampMenu extends GuiScreen {
             String l2 = e.x + " " + e.y + " " + e.z + " (dim " + e.dim + ") | " + e.cfg.w + "x" + e.cfg.h
                 + " @" + e.cfg.fps + "fps | "
                 + (e.on ? TextFormatting.GREEN + "Reproduciendo" : TextFormatting.RED + "Detenida");
-            String l3 = "Redstone: " + (e.cfg.mode == LampConfig.MODE_LEVEL ? "mientras haya señal" : "pulso alterna")
-                + (e.owner.isEmpty() ? "" : " | " + e.owner);
+            String l3 = (e.cfg.mode == LampConfig.MODE_LEVEL ? "Redstone: señal" : "Redstone: pulso")
+                + " | " + e.cfg.blocksSummary();
             drawString(fontRenderer, title, cx - 200, y + 2, 0xFFFFFF);
             drawString(fontRenderer, fontRenderer.trimStringToWidth(l2, 205), cx - 200, y + 12, 0xCCCCCC);
             drawString(fontRenderer, fontRenderer.trimStringToWidth(l3, 205), cx - 200, y + 22, 0x888888);

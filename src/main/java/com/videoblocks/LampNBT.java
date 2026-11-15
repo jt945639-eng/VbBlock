@@ -24,6 +24,7 @@ public final class LampNBT {
         t.setBoolean("dither", c.dither);
         t.setInteger("mode", c.mode);
         t.setInteger("stop", c.stopMode);
+        t.setInteger("blocks", c.blocks);
         return t;
     }
 
@@ -49,6 +50,7 @@ public final class LampNBT {
         c.dither = t.getBoolean("dither");
         c.mode = t.getInteger("mode");
         c.stopMode = t.getInteger("stop");
+        c.blocks = t.hasKey("blocks") ? t.getInteger("blocks") : LampConfig.BLOCKS_DEFAULT;
         return c.sanitize(VideoBlocksMod.LAMPS.maxSide);
     }
 

@@ -20,19 +20,25 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.input.Keyboard;
 
 /**
- * Pantalla para marcar el video (archivo del PC o URL) y sus ajustes. Sirve para crear una lampara
- * nueva (editId == null) o para editar una existente (resolucion, fps, modo de Redstone...).
+ * Editor de una lampara de video (nueva o existente). Dos pestanas:
+ * "Video" (archivo/URL, nombre, resolucion, fps, bucle, ajuste) y
+ * "Opciones" (Redstone, al detener, dithering y tipos de bloque permitidos).
  */
 @SideOnly(Side.CLIENT)
 public class GuiLampEditor extends GuiScreen {
-    private static final int B_OK = 0, B_CANCEL = 1, B_BROWSE = 2, B_LOOP = 3, B_FIT = 4, B_MODE = 5, B_DITHER = 6, B_STOP = 7;
+    private static final int B_OK = 0, B_CANCEL = 1, B_BROWSE = 2, B_LOOP = 3, B_FIT = 4, B_MODE = 5,
+        B_DITHER = 6, B_STOP = 7, B_TAB_VIDEO = 8, B_TAB_OPTIONS = 9,
+        B_CONCRETE = 10, B_WOOL = 11, B_TERRACOTTA = 12, B_PRESET = 20;
+    private static final int[] PRESET_W = {64, 128, 192, 256};
+    private static final int[] PRESET_H = {36, 72, 108, 144};
 
     private final GuiScreen parent;
     private final String editId;
     private final LampConfig cfg;
+    private int tab;
 
     private GuiTextField fSrc, fTitle, fW, fH, fFps;
-    private GuiButton bLoop, bFit, bMode, bDither, bStop;
+    private GuiButton bLoop, bFit, bMode, bDither, bStop, bConcrete, bWool, bTerracotta;
     private String status = "";
 
     private volatile String picked;
@@ -45,54 +51,90 @@ public class GuiLampEditor extends GuiScreen {
         this.cfg = initial;
     }
 
+    private int top() {
+        return Math.max(4, height / 2 - 112);
+    }
+
     @Override
     public void initGui() {
         Keyboard.enableRepeatEvents(true);
+        build();
+    }
+
+    private void build() {
         buttonList.clear();
         int cx = width / 2;
-        int y0 = Math.max(8, height / 2 - 115);
+        int y0 = top();
 
-        fSrc = new GuiTextField(10, fontRenderer, cx - 150, y0 + 12, 235, 18);
-        fSrc.setMaxStringLength(500);
-        fSrc.setText(cfg.src);
-        fSrc.setFocused(true);
-        fTitle = new GuiTextField(11, fontRenderer, cx - 150, y0 + 48, 300, 18);
-        fTitle.setMaxStringLength(48);
-        fTitle.setText(cfg.title);
-        fW = new GuiTextField(12, fontRenderer, cx - 150, y0 + 84, 90, 18);
-        fW.setMaxStringLength(4);
-        fW.setText(String.valueOf(cfg.w));
-        fH = new GuiTextField(13, fontRenderer, cx - 45, y0 + 84, 90, 18);
-        fH.setMaxStringLength(4);
-        fH.setText(String.valueOf(cfg.h));
-        fFps = new GuiTextField(14, fontRenderer, cx + 60, y0 + 84, 90, 18);
-        fFps.setMaxStringLength(2);
-        fFps.setText(String.valueOf(cfg.fps));
+        GuiButton t0 = new GuiButton(B_TAB_VIDEO, cx - 150, y0, 148, 20, "Video");
+        GuiButton t1 = new GuiButton(B_TAB_OPTIONS, cx + 2, y0, 148, 20, "Opciones y bloques");
+        t0.enabled = tab != 0;
+        t1.enabled = tab != 1;
+        buttonList.add(t0);
+        buttonList.add(t1);
 
-        buttonList.add(new GuiButton(B_BROWSE, cx + 90, y0 + 11, 60, 20, "Examinar..."));
-        bLoop = new GuiButton(B_LOOP, cx - 150, y0 + 110, 148, 20, "");
-        bFit = new GuiButton(B_FIT, cx + 2, y0 + 110, 148, 20, "");
-        bMode = new GuiButton(B_MODE, cx - 150, y0 + 134, 148, 20, "");
-        bDither = new GuiButton(B_DITHER, cx + 2, y0 + 134, 148, 20, "");
-        buttonList.add(bLoop);
-        buttonList.add(bFit);
-        buttonList.add(bMode);
-        buttonList.add(bDither);
-        bStop = new GuiButton(B_STOP, cx - 150, y0 + 158, 300, 20, "");
-        buttonList.add(bStop);
-        buttonList.add(new GuiButton(B_OK, cx - 150, y0 + 186, 148, 20,
+        if (tab == 0) {
+            fSrc = new GuiTextField(10, fontRenderer, cx - 150, y0 + 38, 235, 18);
+            fSrc.setMaxStringLength(500);
+            fSrc.setText(cfg.src);
+            fSrc.setFocused(true);
+            fTitle = new GuiTextField(11, fontRenderer, cx - 150, y0 + 72, 300, 18);
+            fTitle.setMaxStringLength(48);
+            fTitle.setText(cfg.title);
+            fW = new GuiTextField(12, fontRenderer, cx - 150, y0 + 106, 90, 18);
+            fW.setMaxStringLength(4);
+            fW.setText(String.valueOf(cfg.w));
+            fH = new GuiTextField(13, fontRenderer, cx - 45, y0 + 106, 90, 18);
+            fH.setMaxStringLength(4);
+            fH.setText(String.valueOf(cfg.h));
+            fFps = new GuiTextField(14, fontRenderer, cx + 60, y0 + 106, 90, 18);
+            fFps.setMaxStringLength(2);
+            fFps.setText(String.valueOf(cfg.fps));
+
+            buttonList.add(new GuiButton(B_BROWSE, cx + 90, y0 + 37, 60, 20, "Examinar..."));
+            for (int i = 0; i < PRESET_W.length; i++) {
+                buttonList.add(new GuiButton(B_PRESET + i, cx - 150 + i * 76, y0 + 130, 72, 20,
+                    PRESET_W[i] + "x" + PRESET_H[i]));
+            }
+            bLoop = new GuiButton(B_LOOP, cx - 150, y0 + 156, 148, 20, "");
+            bFit = new GuiButton(B_FIT, cx + 2, y0 + 156, 148, 20, "");
+            buttonList.add(bLoop);
+            buttonList.add(bFit);
+        } else {
+            fSrc = fTitle = fW = fH = fFps = null;
+            bMode = new GuiButton(B_MODE, cx - 150, y0 + 28, 300, 20, "");
+            bStop = new GuiButton(B_STOP, cx - 150, y0 + 52, 300, 20, "");
+            bDither = new GuiButton(B_DITHER, cx - 150, y0 + 76, 300, 20, "");
+            bConcrete = new GuiButton(B_CONCRETE, cx - 150, y0 + 122, 98, 20, "");
+            bWool = new GuiButton(B_WOOL, cx - 49, y0 + 122, 98, 20, "");
+            bTerracotta = new GuiButton(B_TERRACOTTA, cx + 52, y0 + 122, 98, 20, "");
+            buttonList.add(bMode);
+            buttonList.add(bStop);
+            buttonList.add(bDither);
+            buttonList.add(bConcrete);
+            buttonList.add(bWool);
+            buttonList.add(bTerracotta);
+        }
+        buttonList.add(new GuiButton(B_OK, cx - 150, y0 + 190, 148, 20,
             editId == null ? "Crear lámpara" : "Guardar cambios"));
-        buttonList.add(new GuiButton(B_CANCEL, cx + 2, y0 + 186, 148, 20, "Cancelar"));
+        buttonList.add(new GuiButton(B_CANCEL, cx + 2, y0 + 190, 148, 20, "Cancelar"));
         refreshLabels();
     }
 
     private void refreshLabels() {
-        bLoop.displayString = "Repetir en bucle: " + (cfg.loop ? "Sí" : "No");
-        bFit.displayString = "Imagen: " + (cfg.fit ? "Respetar proporción" : "Estirar");
-        bMode.displayString = "Redstone: " + (cfg.mode == LampConfig.MODE_LEVEL ? "Mientras haya señal" : "Cada pulso alterna");
-        bDither.displayString = "Dithering: " + (cfg.dither ? "Sí" : "No");
-        bStop.displayString = "Al detener: " + (cfg.stopMode == LampConfig.STOP_POSTER
-            ? "volver al primer fotograma" : "dejar la imagen congelada");
+        if (tab == 0) {
+            bLoop.displayString = "Repetir en bucle: " + (cfg.loop ? "Sí" : "No");
+            bFit.displayString = "Imagen: " + (cfg.fit ? "Respetar proporción" : "Estirar");
+        } else {
+            bMode.displayString = "Redstone: " + (cfg.mode == LampConfig.MODE_LEVEL
+                ? "reproduce mientras haya señal" : "cada pulso activa / detiene");
+            bStop.displayString = "Al detener: " + (cfg.stopMode == LampConfig.STOP_POSTER
+                ? "volver al primer fotograma" : "dejar la imagen congelada");
+            bDither.displayString = "Dithering (más matices de color): " + (cfg.dither ? "Sí" : "No");
+            bConcrete.displayString = "Concrete: " + ((cfg.blocks & LampConfig.BLOCK_CONCRETE) != 0 ? "Sí" : "No");
+            bWool.displayString = "Lana: " + ((cfg.blocks & LampConfig.BLOCK_WOOL) != 0 ? "Sí" : "No");
+            bTerracotta.displayString = "Terracota: " + ((cfg.blocks & LampConfig.BLOCK_TERRACOTTA) != 0 ? "Sí" : "No");
+        }
     }
 
     private static int parse(GuiTextField f, int def) {
@@ -101,6 +143,36 @@ public class GuiLampEditor extends GuiScreen {
         } catch (NumberFormatException e) {
             return def;
         }
+    }
+
+    /** Copia lo escrito en los campos de texto a cfg (solo existen en la pestana "Video"). */
+    private void readFields() {
+        if (fSrc == null) {
+            return;
+        }
+        cfg.src = fSrc.getText().trim();
+        cfg.title = fTitle.getText().trim();
+        cfg.w = parse(fW, cfg.w);
+        cfg.h = parse(fH, cfg.h);
+        cfg.fps = parse(fFps, cfg.fps);
+    }
+
+    private void switchTab(int t) {
+        readFields();
+        tab = t;
+        status = "";
+        build();
+    }
+
+    private void toggleBlock(int bit, String name) {
+        int next = cfg.blocks ^ bit;
+        if ((next & 7) == 0) {
+            status = "Debe quedar al menos un tipo de bloque.";
+            return;
+        }
+        cfg.blocks = next;
+        status = "";
+        refreshLabels();
     }
 
     private void browse() {
@@ -135,17 +207,23 @@ public class GuiLampEditor extends GuiScreen {
 
     @Override
     public void updateScreen() {
-        fSrc.updateCursorCounter();
-        fTitle.updateCursorCounter();
-        fW.updateCursorCounter();
-        fH.updateCursorCounter();
-        fFps.updateCursorCounter();
+        if (fSrc != null) {
+            fSrc.updateCursorCounter();
+            fTitle.updateCursorCounter();
+            fW.updateCursorCounter();
+            fH.updateCursorCounter();
+            fFps.updateCursorCounter();
+        }
         String p = picked;
         if (p != null) {
             picked = null;
-            fSrc.setText(p);
-            if (fTitle.getText().trim().isEmpty()) {
-                fTitle.setText(new File(p).getName());
+            if (fSrc != null) {
+                fSrc.setText(p);
+                if (fTitle.getText().trim().isEmpty()) {
+                    fTitle.setText(new File(p).getName());
+                }
+            } else {
+                cfg.src = p;
             }
             status = "";
         }
@@ -163,7 +241,18 @@ public class GuiLampEditor extends GuiScreen {
 
     @Override
     protected void actionPerformed(GuiButton b) throws IOException {
+        if (b.id >= B_PRESET && b.id < B_PRESET + PRESET_W.length && fW != null) {
+            fW.setText(String.valueOf(PRESET_W[b.id - B_PRESET]));
+            fH.setText(String.valueOf(PRESET_H[b.id - B_PRESET]));
+            return;
+        }
         switch (b.id) {
+            case B_TAB_VIDEO:
+                switchTab(0);
+                break;
+            case B_TAB_OPTIONS:
+                switchTab(1);
+                break;
             case B_BROWSE:
                 browse();
                 break;
@@ -187,6 +276,15 @@ public class GuiLampEditor extends GuiScreen {
                 cfg.stopMode = cfg.stopMode == LampConfig.STOP_POSTER ? LampConfig.STOP_FREEZE : LampConfig.STOP_POSTER;
                 refreshLabels();
                 break;
+            case B_CONCRETE:
+                toggleBlock(LampConfig.BLOCK_CONCRETE, "concrete");
+                break;
+            case B_WOOL:
+                toggleBlock(LampConfig.BLOCK_WOOL, "lana");
+                break;
+            case B_TERRACOTTA:
+                toggleBlock(LampConfig.BLOCK_TERRACOTTA, "terracota");
+                break;
             case B_CANCEL:
                 mc.displayGuiScreen(parent);
                 break;
@@ -199,12 +297,11 @@ public class GuiLampEditor extends GuiScreen {
     }
 
     private void save() {
-        cfg.src = fSrc.getText().trim();
-        cfg.title = fTitle.getText().trim();
-        cfg.w = parse(fW, cfg.w);
-        cfg.h = parse(fH, cfg.h);
-        cfg.fps = parse(fFps, cfg.fps);
+        readFields();
         if (cfg.src.isEmpty()) {
+            if (tab != 0) {
+                switchTab(0);
+            }
             status = "Falta el video: elige un archivo o pega una URL.";
             return;
         }
@@ -217,10 +314,14 @@ public class GuiLampEditor extends GuiScreen {
         }
     }
 
+    private GuiTextField[] fields() {
+        return fSrc == null ? new GuiTextField[0] : new GuiTextField[] {fSrc, fTitle, fW, fH, fFps};
+    }
+
     @Override
     protected void keyTyped(char c, int key) throws IOException {
-        if (key == Keyboard.KEY_TAB) {
-            GuiTextField[] all = {fSrc, fTitle, fW, fH, fFps};
+        GuiTextField[] all = fields();
+        if (key == Keyboard.KEY_TAB && all.length > 0) {
             for (int i = 0; i < all.length; i++) {
                 if (all[i].isFocused()) {
                     all[i].setFocused(false);
@@ -235,7 +336,6 @@ public class GuiLampEditor extends GuiScreen {
             return;
         }
         boolean used = false;
-        GuiTextField[] all = {fSrc, fTitle, fW, fH, fFps};
         for (GuiTextField f : all) {
             if (f.isFocused()) {
                 boolean numeric = f == fW || f == fH || f == fFps;
@@ -254,11 +354,9 @@ public class GuiLampEditor extends GuiScreen {
     @Override
     protected void mouseClicked(int mx, int my, int btn) throws IOException {
         super.mouseClicked(mx, my, btn);
-        fSrc.mouseClicked(mx, my, btn);
-        fTitle.mouseClicked(mx, my, btn);
-        fW.mouseClicked(mx, my, btn);
-        fH.mouseClicked(mx, my, btn);
-        fFps.mouseClicked(mx, my, btn);
+        for (GuiTextField f : fields()) {
+            f.mouseClicked(mx, my, btn);
+        }
     }
 
     @Override
@@ -270,23 +368,28 @@ public class GuiLampEditor extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
         int cx = width / 2;
-        int y0 = Math.max(8, height / 2 - 115);
-        drawCenteredString(fontRenderer, editId == null ? "Nueva lámpara de video" : "Editar lámpara de video",
-            cx, y0 - 6, 0xFFFFFF);
-        drawString(fontRenderer, "Video: archivo del PC o URL (http/https)", cx - 150, y0 + 2, 0xAAAAAA);
-        drawString(fontRenderer, "Nombre de la lámpara", cx - 150, y0 + 38, 0xAAAAAA);
-        drawString(fontRenderer, "Ancho (bloques)", cx - 150, y0 + 74, 0xAAAAAA);
-        drawString(fontRenderer, "Alto (bloques)", cx - 45, y0 + 74, 0xAAAAAA);
-        drawString(fontRenderer, "FPS (1-20)", cx + 60, y0 + 74, 0xAAAAAA);
-        fSrc.drawTextBox();
-        fTitle.drawTextBox();
-        fW.drawTextBox();
-        fH.drawTextBox();
-        fFps.drawTextBox();
+        int y0 = top();
+        if (tab == 0) {
+            drawString(fontRenderer, "Video: archivo del PC o URL (http/https)", cx - 150, y0 + 28, 0xAAAAAA);
+            drawString(fontRenderer, "Nombre de la lámpara", cx - 150, y0 + 62, 0xAAAAAA);
+            drawString(fontRenderer, "Ancho (bloques)", cx - 150, y0 + 96, 0xAAAAAA);
+            drawString(fontRenderer, "Alto (bloques)", cx - 45, y0 + 96, 0xAAAAAA);
+            drawString(fontRenderer, "FPS (1-20)", cx + 60, y0 + 96, 0xAAAAAA);
+            for (GuiTextField f : fields()) {
+                f.drawTextBox();
+            }
+        } else {
+            drawString(fontRenderer, "Bloques que puede usar la pantalla (todos de supervivencia 1.12.2)",
+                cx - 150, y0 + 108, 0xAAAAAA);
+            drawCenteredString(fontRenderer, cfg.colorCount() + " colores disponibles"
+                + (cfg.colorCount() <= 16 ? " (pocos: la imagen perderá matices)" : ""), cx, y0 + 148, 0xCCCCCC);
+            drawCenteredString(fontRenderer, "Concrete y lana: 16 colores cada uno. Terracota: 16 tonos apagados.",
+                cx, y0 + 162, 0x888888);
+        }
         if (!status.isEmpty()) {
-            drawCenteredString(fontRenderer, status, cx, y0 + 212, 0xFF5555);
+            drawCenteredString(fontRenderer, status, cx, y0 + 216, 0xFF5555);
         } else if (choosing) {
-            drawCenteredString(fontRenderer, "Abriendo el selector de archivos...", cx, y0 + 212, 0xFFFF55);
+            drawCenteredString(fontRenderer, "Abriendo el selector de archivos...", cx, y0 + 216, 0xFFFF55);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
     }

@@ -86,7 +86,12 @@ public final class Screen {
 
     /** Nueva pantalla con otra resolucion, mismo ancla, ajustes y video (continua donde iba). */
     public Screen resized(int nw, int nh) {
-        Screen s = new Screen(key, dim, ax, ay, az, dx, dz, nw, nh, floor, palette);
+        return resized(nw, nh, palette);
+    }
+
+    /** Igual, pero ademas con otra paleta de bloques. */
+    public Screen resized(int nw, int nh, Palette pal) {
+        Screen s = new Screen(key, dim, ax, ay, az, dx, dz, nw, nh, floor, pal);
         s.fps = fps;
         s.loop = loop;
         s.fit = fit;

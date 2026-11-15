@@ -14,8 +14,12 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
 
 ## Cómo se usa
 1. Pulsa **V** (tecla configurable en Controles → Video Blocks) para abrir el menú de lámparas.
-2. **Nueva lámpara** → elige el video con **Examinar...** (archivo de tu PC) o pega una **URL** (http/https),
-   y ajusta nombre, resolución (ancho × alto en bloques), FPS, bucle, ajuste de imagen y modo de Redstone.
+2. **Nueva lámpara** → elige el video con **Examinar...** (archivo de tu PC) o pega una **URL** (http/https).
+   El editor tiene dos pestañas:
+   - **Video:** archivo/URL, nombre, **resolución** (ancho × alto en bloques, con atajos 64×36, 128×72, 192×108 y 256×144),
+     **FPS** (1-20), bucle y ajuste de imagen (respetar proporción o estirar).
+   - **Opciones y bloques:** modo de Redstone, qué hacer al detener, dithering y **qué tipos de bloque puede usar la pantalla**
+     (concrete, lana y/o terracota; mínimo uno). Más tipos = más colores (16 por tipo) y una imagen más fiel.
 3. **Crear lámpara**: el video queda marcado y la lámpara llega a tu inventario.
 4. **Colócala en el suelo** mirando hacia donde quieres la pantalla: la pantalla se genera **acostada en el suelo**
    (horizontal, nunca de pie), a la altura de la lámpara y justo delante de ella, con la parte de arriba del video
@@ -26,8 +30,12 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
    - **Nunca queda una pantalla negra:** cuando la lámpara está detenida (o se coloca sin señal en modo "mientras haya señal")
      la pantalla muestra el **primer fotograma del video** hecho con bloques. En el editor puedes elegir en su lugar
      *dejar la imagen congelada* en el fotograma donde se detuvo.
-6. El **menú** guarda todas las lámparas del mundo: iniciar/detener (`>` / `||`), **Editar** (resolución en caliente,
-   video, modo...), **Ir** (te teletransporta), **Dar** (copia de la lámpara con su video) y **X** (olvidar y borrar la pantalla).
+6. El **menú** guarda todas las lámparas del mundo: iniciar/detener (`>` / `||`), **Editar** (abre el mismo editor de arriba
+   con los ajustes de esa lámpara), **Ir** (te teletransporta), **Dar** (copia de la lámpara con su video) y **X** (olvidar y
+   borrar la pantalla). Los cambios se aplican **en caliente**, sin quitar la lámpara:
+   - cambiar la **resolución** borra la pantalla vieja y dibuja la nueva en el mismo sitio, y el video sigue por donde iba;
+   - cambiar los **FPS** reinicia la decodificación en el mismo segundo;
+   - cambiar los **bloques** redibuja la imagen encima con la paleta nueva, sin borrarla y sin detener el video.
 
 ### Videos del PC, URL y servidores
 - **Un jugador / LAN:** cualquier archivo de tu PC funciona.
@@ -46,7 +54,7 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
 - `ffmpegPath`: ruta de ffmpeg.
 - `maxSide`: ancho/alto máximo de una pantalla (256 por defecto).
 - `blocksPerTick`: tope de bloques cambiados por tick entre todas las pantallas (5000). Bájalo si hay lag.
-- `palette`: `concrete`, `wool`, `terracotta` o `all`, combinables con comas.
+- `palette`: bloques de la pantalla manual de `/vblocks create` (`concrete`, `wool`, `terracotta` o `all`). Las lámparas eligen los suyos en el menú.
 - `requireOp`: si es `true`, solo operadores (y el dueño del mundo en un jugador/LAN) usan lámparas y menú.
 
 ## Bloques (todo el video es de bloques de supervivencia 1.12.2)

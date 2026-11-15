@@ -174,6 +174,41 @@ public class CoreSmokeTest {
         check(world.size() == 16 * 9, "resolucion en caliente 16x9: " + world.size() + " bloques");
         check(c.screens.get(lamp.id).isPlaying(), "el video sigue tras cambiar la resolucion");
 
+        // fps en caliente
+        LampConfig fp = lamp.cfg.copy(); fp.fps = 15;
+        c.update(lamp.id, fp);
+        check(c.screens.get(lamp.id).fps == 15 && c.screens.get(lamp.id).isPlaying(), "fps en caliente: 15 fps y sigue reproduciendo");
+
+        // tipos de bloque en caliente (mismo tamano: se redibuja sin borrar)
+        LampConfig wl = lamp.cfg.copy(); wl.blocks = LampConfig.BLOCK_WOOL;
+        c.update(lamp.id, wl);
+        tickFor(c, 1000); drain(c);
+        boolean onlyWool = true;
+        for (Palette.Entry e : world.values()) onlyWool &= e.group.equals("wool");
+        check(onlyWool && world.size() == 16 * 9, "solo lana: todos los bloques son lana (" + world.size() + " bloques, sin huecos)");
+        check(c.screens.get(lamp.id).isPlaying(), "cambiar de bloques no detiene el video");
+        LampConfig tc = lamp.cfg.copy(); tc.blocks = LampConfig.BLOCK_TERRACOTTA | LampConfig.BLOCK_CONCRETE;
+        c.update(lamp.id, tc);
+        tickFor(c, 1000); drain(c);
+        boolean tcOk = true;
+        for (Palette.Entry e : world.values()) tcOk &= e.group.equals("terracotta") || e.group.equals("concrete");
+        check(tcOk && world.size() == 16 * 9, "concrete + terracota: sin lana");
+        // resolucion y bloques a la vez
+        LampConfig both = lamp.cfg.copy(); both.w = 20; both.h = 10; both.blocks = LampConfig.BLOCK_CONCRETE;
+        c.update(lamp.id, both);
+        tickFor(c, 1500); drain(c);
+        boolean onlyConcrete = true;
+        for (Palette.Entry e : world.values()) onlyConcrete &= e.group.equals("concrete");
+        check(onlyConcrete && world.size() == 20 * 10, "20x10 solo concrete: " + world.size() + " bloques");
+        LampConfig z = new LampConfig(); z.blocks = 0; z.sanitize(256);
+        check(z.blocks == LampConfig.BLOCKS_DEFAULT, "ninguna seleccion de bloques -> vuelve al valor por defecto");
+        check(Palette.of(both.blocksSpec()).size() == 16 && both.colorCount() == 16, "concrete solo = 16 colores");
+        // volver a 16x9 con los bloques por defecto para el resto de pruebas
+        LampConfig back2 = lamp.cfg.copy(); back2.w = 16; back2.h = 9; back2.blocks = LampConfig.BLOCKS_DEFAULT;
+        c.update(lamp.id, back2);
+        tickFor(c, 1500); drain(c);
+        check(world.size() == 16 * 9, "de vuelta a 16x9: " + world.size());
+
         // detenida + cambio de resolucion: la pantalla nueva tambien muestra el primer fotograma
         LampConfig st = lamp.cfg.copy(); st.mode = LampConfig.MODE_PULSE;
         c.update(lamp.id, st);

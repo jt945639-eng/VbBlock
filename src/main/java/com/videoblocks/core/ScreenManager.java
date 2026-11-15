@@ -54,10 +54,15 @@ public final class ScreenManager {
     /** Cambia la resolucion: borra la pantalla vieja y dibuja la nueva en el mismo lugar. */
     public Screen resize(String key, int w, int h) {
         Screen old = active.get(key);
+        return old == null ? null : resize(key, w, h, old.palette);
+    }
+
+    public Screen resize(String key, int w, int h, Palette palette) {
+        Screen old = active.get(key);
         if (old == null) {
             return null;
         }
-        Screen n = old.resized(w, h);
+        Screen n = old.resized(w, h, palette);
         active.put(key, n);
         old.kill();
         dying.add(old);

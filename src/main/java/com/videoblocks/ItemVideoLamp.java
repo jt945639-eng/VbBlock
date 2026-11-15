@@ -77,6 +77,7 @@ public class ItemVideoLamp extends ItemBlock {
         tooltip.add(c.w + "x" + c.h + " bloques @ " + c.fps + " fps" + (c.loop ? ", en bucle" : ""));
         tooltip.add("Redstone: " + (c.mode == LampConfig.MODE_LEVEL ? "reproduce mientras haya señal"
             : "cada pulso activa/detiene"));
+        tooltip.add("Bloques: " + c.blocksSummary() + " (" + c.colorCount() + " colores)");
         tooltip.add("Al detenerse: " + (c.stopMode == LampConfig.STOP_POSTER ? "vuelve al primer fotograma" : "queda congelada"));
         tooltip.add("Colócala en el suelo: la pantalla sale delante de ti.");
     }

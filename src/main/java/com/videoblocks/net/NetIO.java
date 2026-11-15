@@ -23,6 +23,7 @@ final class NetIO {
         b.writeBoolean(c.dither);
         b.writeInt(c.mode);
         b.writeInt(c.stopMode);
+        b.writeInt(c.blocks);
     }
 
     static LampConfig readConfig(ByteBuf b) {
@@ -37,6 +38,7 @@ final class NetIO {
         c.dither = b.readBoolean();
         c.mode = b.readInt();
         c.stopMode = b.readInt();
+        c.blocks = b.readInt();
         return c;
     }
 

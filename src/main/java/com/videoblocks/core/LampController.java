@@ -35,8 +35,7 @@ public final class LampController {
     private final Map<String, Boolean> lastPowered = new HashMap<String, Boolean>();
     private final List<ScreenManager.Msg> messages = new ArrayList<ScreenManager.Msg>();
     private boolean dirty;
-    private Palette palette;
-    private String paletteBuilt;
+    private final Map<Integer, Palette> palettes = new HashMap<Integer, Palette>();
 
     // ---- registro ----
 
@@ -132,25 +131,40 @@ public final class LampController {
         if (s == null) {
             return;
         }
-        if (old.w != nc.w || old.h != nc.h) {
-            s = screens.resize(id, nc.w, nc.h);
+        boolean dims = old.w != nc.w || old.h != nc.h;
+        boolean blocks = old.blocks != nc.blocks;
+        boolean video = !old.sameVideo(nc);
+        // Si solo cambian fps/ajuste, el video sigue en el mismo segundo; si cambia el archivo, empieza de cero.
+        double at = old.src.equals(nc.src) && s.isPlaying() && !s.isPoster() ? s.elapsedSeconds() : 0;
+        if (dims) {
+            // la pantalla vieja se borra y la nueva (con la paleta nueva) se dibuja en el mismo sitio
+            s = screens.resize(id, nc.w, nc.h, palette(nc.blocks));
+        } else if (blocks) {
+            // mismo tamano: se redibuja encima con la paleta nueva, sin borrar (no parpadea)
+            screens.detach(id);
+            s = buildScreen(e);
+            applyState(e, s, at);
+            video = false;
         }
         s.fit = nc.fit;
         s.mapper.dither = nc.dither;
-        boolean resized = old.w != nc.w || old.h != nc.h;
-        if (!old.sameVideo(nc) || (resized && !e.on)) {
-            applyState(e, s);
+        if (video || (dims && !e.on)) {
+            applyState(e, s, at);
         }
     }
 
     /** Pone la pantalla en el estado que le toca: reproduciendo, o en reposo (primer fotograma / congelada). */
     private void applyState(LampEntry e, Screen s) {
+        applyState(e, s, 0);
+    }
+
+    private void applyState(LampEntry e, Screen s, double startSeconds) {
         if (e.on) {
-            startPlay(e, s);
+            startPlay(e, s, startSeconds);
         } else if (e.cfg.stopMode == LampConfig.STOP_POSTER) {
             showPoster(e, s);
         } else {
-            startPlay(e, s);
+            startPlay(e, s, 0);
             s.paused = true;
         }
     }
@@ -163,26 +177,33 @@ public final class LampController {
         }
     }
 
-    private Palette palette() {
-        if (palette == null || !paletteSpec.equals(paletteBuilt)) {
-            palette = Palette.of(paletteSpec);
-            paletteBuilt = paletteSpec;
+    private Palette palette(int mask) {
+        Palette p = palettes.get(mask);
+        if (p == null) {
+            LampConfig c = new LampConfig();
+            c.blocks = mask;
+            p = Palette.of(c.sanitize(maxSide).blocksSpec());
+            palettes.put(mask, p);
         }
-        return palette;
+        return p;
     }
 
     private Screen buildScreen(LampEntry e) {
         // La pantalla queda en el suelo, en la misma capa que la lampara, empezando justo delante de ella.
         Screen s = screens.create(e.id, e.dim, e.x + e.dx, e.y, e.z + e.dz, e.dx, e.dz,
-            e.cfg.w, e.cfg.h, true, palette());
+            e.cfg.w, e.cfg.h, true, palette(e.cfg.blocks));
         s.fit = e.cfg.fit;
         s.mapper.dither = e.cfg.dither;
         return s;
     }
 
     private void startPlay(LampEntry e, Screen s) {
+        startPlay(e, s, 0);
+    }
+
+    private void startPlay(LampEntry e, Screen s, double startSeconds) {
         try {
-            s.play(ffmpeg, VideoPaths.resolve(e.cfg.src), e.cfg.fps, e.cfg.loop, 0);
+            s.play(ffmpeg, VideoPaths.resolve(e.cfg.src), e.cfg.fps, e.cfg.loop, startSeconds);
         } catch (IllegalArgumentException ex) {
             messages.add(new ScreenManager.Msg(e.id, ex.getMessage()));
         }
