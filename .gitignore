@@ -1,0 +1,25 @@
+# Gradle / ForgeGradle
+.gradle/
+build/
+run/
+out/
+bin/
+*.class
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.vscode/
+eclipse/
+
+# Videos de prueba y archivos locales
+videos/
+*.mp4
+*.mkv
+*.webm
+.DS_Store
