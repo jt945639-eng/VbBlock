@@ -230,6 +230,16 @@ public final class Palette {
         }
     }
 
+    /** Indice del bloque con ese texto "categoria:nombre" (p.ej. "wool:black"), o -1. */
+    public static int indexOf(String key) {
+        for (int i = 0; i < CATALOG.size(); i++) {
+            if (CATALOG.get(i).toString().equals(key)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     /** Bloque del catalogo por indice. */
     public static Entry catalog(int i) {
         if (i < 0 || i >= CATALOG.size()) {

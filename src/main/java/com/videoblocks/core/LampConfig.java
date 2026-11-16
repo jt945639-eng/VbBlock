@@ -55,9 +55,8 @@ public final class LampConfig {
         fps = clamp(fps, 1, MAX_FPS);
         mode = clamp(mode, 0, 1);
         stopMode = clamp(stopMode, 0, 1);
-        if (blocks == null || blocks.isEmpty()) {
-            blocks = BlockSet.DEFAULT; // siempre debe quedar al menos un bloque
-        }
+        // al menos 2 bloques: si faltan se completan con lana negra y piedra luminosa
+        blocks = blocks == null ? BlockSet.MINIMAL : blocks.ensureMinimum();
         if (title.isEmpty()) {
             String t = src;
             int cut = Math.max(t.lastIndexOf('/'), t.lastIndexOf('\\'));

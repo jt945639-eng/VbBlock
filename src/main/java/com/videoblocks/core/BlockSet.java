@@ -14,6 +14,12 @@ public final class BlockSet {
     /** Por defecto: concrete + lana (los 32 primeros). */
     public static final BlockSet DEFAULT = range(0, 32);
 
+    /** Lo que queda cuando se desactivan todos los bloques: lana negra y piedra luminosa. */
+    public static final BlockSet MINIMAL = of(Palette.indexOf("wool:black"), Palette.indexOf("nether_end:glowstone"));
+
+    /** Minimo de bloques activos para poder dibujar un video. */
+    public static final int MIN_BLOCKS = 2;
+
     private final long[] w;
 
     private BlockSet(long[] w) {
@@ -48,6 +54,16 @@ public final class BlockSet {
             a[i >> 6] |= 1L << (i & 63);
         }
         return new BlockSet(a);
+    }
+
+    /** Si hay menos de 2 bloques activos, completa con lana negra y piedra luminosa hasta tener 2. */
+    public BlockSet ensureMinimum() {
+        BlockSet s = this;
+        int[] fill = {Palette.indexOf("wool:black"), Palette.indexOf("nether_end:glowstone")};
+        for (int i = 0; i < fill.length && s.count() < MIN_BLOCKS; i++) {
+            s = s.with(fill[i], true);
+        }
+        return s;
     }
 
     public long word(int i) {
