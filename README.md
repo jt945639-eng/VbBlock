@@ -21,7 +21,7 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
    - **Opciones y bloques:** modo de Redstone, qué hacer al detener, dithering y el botón **Bloques**: abre la lista de **todos los
      bloques sólidos de supervivencia (176)**, por categorías (< > para cambiar de página), cada uno con su interruptor.
      Por defecto van activados solo concrete y lana (los demás empiezan desactivados). La última categoría, **Desactivados**, lista todos los que están apagados para que los actives desde ahí. Los desactivados **no se generan**
-     en el video (mínimo uno activo). Más bloques = más colores y una imagen más fiel.
+     en el video (mínimo **2 bloques**: si desactivas todos quedan solo **lana negra y piedra luminosa**, y el botón "Ninguno" hace lo mismo). Más bloques = más colores y una imagen más fiel.
 3. **Crear lámpara**: el video queda marcado y la lámpara llega a tu inventario.
 4. **Colócala en el suelo** mirando hacia donde quieres la pantalla: la pantalla se genera **acostada en el suelo**
    (horizontal, nunca de pie), a la altura de la lámpara y **a un bloque de distancia** de ella (queda un hueco de aire entre la lámpara y la pantalla), con la parte de arriba del video
