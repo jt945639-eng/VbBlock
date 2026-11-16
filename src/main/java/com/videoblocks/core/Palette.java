@@ -78,6 +78,32 @@ public final class Palette {
     public static final Set<String> SURVIVAL_GROUPS = new java.util.LinkedHashSet<String>(
         java.util.Arrays.asList("concrete", "wool", "terracotta"));
 
+    /** Cantidad de bloques del catalogo: concrete (0-15), lana (16-31), terracota (32-47). */
+    public static final int CATALOG_SIZE = 48;
+
+    /** Bloque del catalogo: indice 0-47 (grupo = i / 16, tinte = i % 16). */
+    public static Entry catalog(int i) {
+        if (i < 0 || i >= CATALOG_SIZE) {
+            throw new IllegalArgumentException("Bloque fuera del catalogo: " + i);
+        }
+        int g = i / 16;
+        return GROUPS.get(g == 0 ? "concrete" : g == 1 ? "wool" : "terracotta").get(i % 16);
+    }
+
+    /** Paleta con solo los bloques activados en la mascara (bit i = catalog(i)). */
+    public static Palette ofMask(long mask) {
+        List<Entry> l = new ArrayList<Entry>();
+        for (int i = 0; i < CATALOG_SIZE; i++) {
+            if ((mask & (1L << i)) != 0) {
+                l.add(catalog(i));
+            }
+        }
+        if (l.isEmpty()) {
+            throw new IllegalArgumentException("La paleta esta vacia");
+        }
+        return new Palette(l, "bloques:" + l.size());
+    }
+
     public static Set<String> groupNames() {
         return GROUPS.keySet();
     }

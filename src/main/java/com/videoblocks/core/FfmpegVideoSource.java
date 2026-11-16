@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * convertidos a indices de paleta. Corre en un hilo aparte; si el juego no consume frames,
  * la cola se llena y ffmpeg se detiene solo (no hace falta limitar la velocidad).
  */
-public final class FfmpegVideoSource {
+public final class FfmpegVideoSource implements FrameSource {
     private final List<String> cmd = new ArrayList<String>();
     private final int w, h;
     private final FrameMapper mapper;
@@ -69,6 +69,7 @@ public final class FfmpegVideoSource {
         cmd.add("-");
     }
 
+    @Override
     public void start() {
         thread = new Thread(new Runnable() {
             public void run() {
@@ -125,7 +126,9 @@ public final class FfmpegVideoSource {
             }
         } catch (IOException e) {
             if (!closed) {
-                error = "No se pudo ejecutar ffmpeg (" + cmd.get(0) + "): " + e.getMessage();
+                error = "No se pudo ejecutar ffmpeg (" + cmd.get(0) + "): " + e.getMessage()
+                    + ". Si juegas en el telefono (Pojav) no existe ffmpeg: convierte el video a .gif"
+                    + " (por ejemplo en ezgif.com) y usa ese archivo o su URL.";
             }
         } catch (InterruptedException ignored) {
         } finally {
@@ -137,19 +140,23 @@ public final class FfmpegVideoSource {
     }
 
     /** Siguiente frame (indices de paleta, w*h) o null si todavia no hay. */
+    @Override
     public byte[] poll() {
         return queue.poll();
     }
 
     /** true cuando el video termino y ya no quedan frames pendientes. */
+    @Override
     public boolean isFinished() {
         return finished && queue.isEmpty();
     }
 
+    @Override
     public String error() {
         return error;
     }
 
+    @Override
     public void close() {
         closed = true;
         Process p = process;

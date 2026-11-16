@@ -24,7 +24,7 @@ public final class Screen {
     private int cursor;
     private boolean dying;
 
-    private FfmpegVideoSource source;
+    private FrameSource source;
     public String input, ffmpeg;
     public int fps = 10;
     public boolean loop, paused;
@@ -133,7 +133,12 @@ public final class Screen {
         this.paused = false;
         this.posterOnly = false;
         this.message = null;
-        source = new FfmpegVideoSource(ffmpegPath, in, w, h, fps, startSeconds, fit, loop, mapper);
+        // GIF: se lee con el propio Java (sirve en el telefono); cualquier otro video usa ffmpeg.
+        if (VideoPaths.isGif(in)) {
+            source = new GifVideoSource(in, w, h, fps, startSeconds, fit, loop, mapper);
+        } else {
+            source = new FfmpegVideoSource(ffmpegPath, in, w, h, fps, startSeconds, fit, loop, mapper);
+        }
         source.start();
     }
 

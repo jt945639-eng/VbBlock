@@ -28,7 +28,7 @@ import org.lwjgl.input.Keyboard;
 public class GuiLampEditor extends GuiScreen {
     private static final int B_OK = 0, B_CANCEL = 1, B_BROWSE = 2, B_LOOP = 3, B_FIT = 4, B_MODE = 5,
         B_DITHER = 6, B_STOP = 7, B_TAB_VIDEO = 8, B_TAB_OPTIONS = 9,
-        B_CONCRETE = 10, B_WOOL = 11, B_TERRACOTTA = 12, B_PRESET = 20;
+        B_BLOCKS = 10, B_PRESET = 20;
     private static final int[] PRESET_W = {64, 128, 192, 256};
     private static final int[] PRESET_H = {36, 72, 108, 144};
 
@@ -38,7 +38,7 @@ public class GuiLampEditor extends GuiScreen {
     private int tab;
 
     private GuiTextField fSrc, fTitle, fW, fH, fFps;
-    private GuiButton bLoop, bFit, bMode, bDither, bStop, bConcrete, bWool, bTerracotta;
+    private GuiButton bLoop, bFit, bMode, bDither, bStop, bBlocks;
     private String status = "";
 
     private volatile String picked;
@@ -105,15 +105,11 @@ public class GuiLampEditor extends GuiScreen {
             bMode = new GuiButton(B_MODE, cx - 150, y0 + 28, 300, 20, "");
             bStop = new GuiButton(B_STOP, cx - 150, y0 + 52, 300, 20, "");
             bDither = new GuiButton(B_DITHER, cx - 150, y0 + 76, 300, 20, "");
-            bConcrete = new GuiButton(B_CONCRETE, cx - 150, y0 + 122, 98, 20, "");
-            bWool = new GuiButton(B_WOOL, cx - 49, y0 + 122, 98, 20, "");
-            bTerracotta = new GuiButton(B_TERRACOTTA, cx + 52, y0 + 122, 98, 20, "");
+            bBlocks = new GuiButton(B_BLOCKS, cx - 150, y0 + 122, 300, 20, "");
             buttonList.add(bMode);
             buttonList.add(bStop);
             buttonList.add(bDither);
-            buttonList.add(bConcrete);
-            buttonList.add(bWool);
-            buttonList.add(bTerracotta);
+            buttonList.add(bBlocks);
         }
         buttonList.add(new GuiButton(B_OK, cx - 150, y0 + 190, 148, 20,
             editId == null ? "Crear lámpara" : "Guardar cambios"));
@@ -131,9 +127,7 @@ public class GuiLampEditor extends GuiScreen {
             bStop.displayString = "Al detener: " + (cfg.stopMode == LampConfig.STOP_POSTER
                 ? "volver al primer fotograma" : "dejar la imagen congelada");
             bDither.displayString = "Dithering (más matices de color): " + (cfg.dither ? "Sí" : "No");
-            bConcrete.displayString = "Concrete: " + ((cfg.blocks & LampConfig.BLOCK_CONCRETE) != 0 ? "Sí" : "No");
-            bWool.displayString = "Lana: " + ((cfg.blocks & LampConfig.BLOCK_WOOL) != 0 ? "Sí" : "No");
-            bTerracotta.displayString = "Terracota: " + ((cfg.blocks & LampConfig.BLOCK_TERRACOTTA) != 0 ? "Sí" : "No");
+            bBlocks.displayString = "Bloques: " + cfg.colorCount() + " de 48 activos  (clic para elegir)";
         }
     }
 
@@ -164,17 +158,6 @@ public class GuiLampEditor extends GuiScreen {
         build();
     }
 
-    private void toggleBlock(int bit, String name) {
-        int next = cfg.blocks ^ bit;
-        if ((next & 7) == 0) {
-            status = "Debe quedar al menos un tipo de bloque.";
-            return;
-        }
-        cfg.blocks = next;
-        status = "";
-        refreshLabels();
-    }
-
     private void browse() {
         if (choosing) {
             return;
@@ -188,7 +171,7 @@ public class GuiLampEditor extends GuiScreen {
             @Override
             public void run() {
                 try {
-                    FileDialog fd = new FileDialog((Frame) null, "Elige un video", FileDialog.LOAD);
+                    FileDialog fd = new FileDialog((Frame) null, "Elige un video o GIF", FileDialog.LOAD);
                     fd.setVisible(true);
                     String f = fd.getFile();
                     if (f != null) {
@@ -276,14 +259,8 @@ public class GuiLampEditor extends GuiScreen {
                 cfg.stopMode = cfg.stopMode == LampConfig.STOP_POSTER ? LampConfig.STOP_FREEZE : LampConfig.STOP_POSTER;
                 refreshLabels();
                 break;
-            case B_CONCRETE:
-                toggleBlock(LampConfig.BLOCK_CONCRETE, "concrete");
-                break;
-            case B_WOOL:
-                toggleBlock(LampConfig.BLOCK_WOOL, "lana");
-                break;
-            case B_TERRACOTTA:
-                toggleBlock(LampConfig.BLOCK_TERRACOTTA, "terracota");
+            case B_BLOCKS:
+                mc.displayGuiScreen(new GuiBlockPicker(this, cfg));
                 break;
             case B_CANCEL:
                 mc.displayGuiScreen(parent);
@@ -370,7 +347,7 @@ public class GuiLampEditor extends GuiScreen {
         int cx = width / 2;
         int y0 = top();
         if (tab == 0) {
-            drawString(fontRenderer, "Video: archivo del PC o URL (http/https)", cx - 150, y0 + 28, 0xAAAAAA);
+            drawString(fontRenderer, "Video o GIF: archivo del PC o URL (http/https)", cx - 150, y0 + 28, 0xAAAAAA);
             drawString(fontRenderer, "Nombre de la lámpara", cx - 150, y0 + 62, 0xAAAAAA);
             drawString(fontRenderer, "Ancho (bloques)", cx - 150, y0 + 96, 0xAAAAAA);
             drawString(fontRenderer, "Alto (bloques)", cx - 45, y0 + 96, 0xAAAAAA);
@@ -381,9 +358,9 @@ public class GuiLampEditor extends GuiScreen {
         } else {
             drawString(fontRenderer, "Bloques que puede usar la pantalla (todos de supervivencia 1.12.2)",
                 cx - 150, y0 + 108, 0xAAAAAA);
-            drawCenteredString(fontRenderer, cfg.colorCount() + " colores disponibles"
-                + (cfg.colorCount() <= 16 ? " (pocos: la imagen perderá matices)" : ""), cx, y0 + 148, 0xCCCCCC);
-            drawCenteredString(fontRenderer, "Concrete y lana: 16 colores cada uno. Terracota: 16 tonos apagados.",
+            drawCenteredString(fontRenderer, cfg.blocksSummary() + (cfg.colorCount() <= 16
+                ? "  (pocos: la imagen perderá matices)" : ""), cx, y0 + 148, 0xCCCCCC);
+            drawCenteredString(fontRenderer, "Activa o desactiva cada bloque: los desactivados no salen en el video.",
                 cx, y0 + 162, 0x888888);
         }
         if (!status.isEmpty()) {

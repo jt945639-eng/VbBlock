@@ -24,7 +24,7 @@ public final class LampNBT {
         t.setBoolean("dither", c.dither);
         t.setInteger("mode", c.mode);
         t.setInteger("stop", c.stopMode);
-        t.setInteger("blocks", c.blocks);
+        t.setLong("blockMask", c.blocks);
         return t;
     }
 
@@ -50,7 +50,13 @@ public final class LampNBT {
         c.dither = t.getBoolean("dither");
         c.mode = t.getInteger("mode");
         c.stopMode = t.getInteger("stop");
-        c.blocks = t.hasKey("blocks") ? t.getInteger("blocks") : LampConfig.BLOCKS_DEFAULT;
+        if (t.hasKey("blockMask")) {
+            c.blocks = t.getLong("blockMask");
+        } else if (t.hasKey("blocks")) {
+            c.blocks = LampConfig.groupBitsToMask(t.getInteger("blocks")); // guardado con la version anterior
+        } else {
+            c.blocks = LampConfig.BLOCKS_DEFAULT;
+        }
         return c.sanitize(VideoBlocksMod.LAMPS.maxSide);
     }
 

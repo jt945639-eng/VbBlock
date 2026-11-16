@@ -9,7 +9,7 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
 
 ## Requisitos
 - Minecraft 1.12.2 + Forge 14.23.5.2860 (el mod va en cliente **y** servidor)
-- **ffmpeg** instalado (en el PATH o con la ruta en `config/videoblocks.cfg`)
+- **ffmpeg** instalado para videos mp4/webm/etc. (en el PATH o con la ruta en `config/videoblocks.cfg`). **No hace falta para GIFs**: se leen con Java puro (ideal para el teléfono / PojavLauncher)
 - Ser operador (o el dueño del mundo en un solo jugador / LAN). Configurable con `requireOp`.
 
 ## Cómo se usa
@@ -18,8 +18,9 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
    El editor tiene dos pestañas:
    - **Video:** archivo/URL, nombre, **resolución** (ancho × alto en bloques, con atajos 64×36, 128×72, 192×108 y 256×144),
      **FPS** (1-20), bucle y ajuste de imagen (respetar proporción o estirar).
-   - **Opciones y bloques:** modo de Redstone, qué hacer al detener, dithering y **qué tipos de bloque puede usar la pantalla**
-     (concrete, lana y/o terracota; mínimo uno). Más tipos = más colores (16 por tipo) y una imagen más fiel.
+   - **Opciones y bloques:** modo de Redstone, qué hacer al detener, dithering y el botón **Bloques**: abre la lista de los
+     **48 bloques** (16 de concrete, 16 de lana y 16 de terracota), cada uno con su interruptor. Los desactivados **no se generan**
+     en el video (mínimo uno activo). Más bloques = más colores y una imagen más fiel.
 3. **Crear lámpara**: el video queda marcado y la lámpara llega a tu inventario.
 4. **Colócala en el suelo** mirando hacia donde quieres la pantalla: la pantalla se genera **acostada en el suelo**
    (horizontal, nunca de pie), a la altura de la lámpara y justo delante de ella, con la parte de arriba del video
@@ -36,6 +37,11 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
    - cambiar la **resolución** borra la pantalla vieja y dibuja la nueva en el mismo sitio, y el video sigue por donde iba;
    - cambiar los **FPS** reinicia la decodificación en el mismo segundo;
    - cambiar los **bloques** redibuja la imagen encima con la paleta nueva, sin borrarla y sin detener el video.
+
+### GIFs y teléfono (Android / PojavLauncher)
+En el teléfono no existe ffmpeg, así que usa **GIFs** (archivo o URL): el mod los lee solo con Java y funcionan igual
+(bucle, FPS, resolución, primer fotograma al detener). Convierte tu video en https://ezgif.com (video a GIF) con unos
+160×90 – 256×144 píxeles y ~10 fps. Empieza con resolución 64×36 y baja `blocksPerTick` si el juego va lento.
 
 ### Videos del PC, URL y servidores
 - **Un jugador / LAN:** cualquier archivo de tu PC funciona.
@@ -78,14 +84,16 @@ la genera el mod sin gastar bloques de tu inventario.
 - No incluye audio.
 
 ## Compilar
-**Con GitHub (recomendado):** al subir el proyecto, el workflow `.github/workflows/build.yml` corre las pruebas del núcleo
-y compila el mod con Gradle 4.9 + JDK 8. El `.jar` queda en *Actions → Build → Artifacts*. Si creas una *tag* `v1.0.0`
+**Con GitHub (recomendado):** al subir el proyecto, el workflow `.github/workflows/build.yml` corre las pruebas del núcleo y
+compila el mod con el **MDK oficial de Forge 1.12.2-14.23.5.2860**: lo descarga, copia dentro el `src/` de este repo y usa
+el `gradlew` del propio MDK (con JDK 8). El `.jar` queda en *Actions → Build → Artifacts*. Si creas una *tag* `v1.0.0`
 (`git tag v1.0.0 && git push --tags`) también se publica como *Release*.
 
-**En tu PC:** JDK 8 + Gradle 4.9 (o el `gradlew` del MDK oficial de Forge 1.12.2) → `gradle setupDecompWorkspace build`;
-el `.jar` queda en `build/libs/`.
+**En tu PC:** descarga el MDK de Forge 1.12.2-14.23.5.2860, reemplaza su carpeta `src/` por la de este repo, pon en su
+`build.gradle` `group = "com.videoblocks"` y `archivesBaseName = "VideoBlocks-1.12.2"`, y corre `gradlew build` con JDK 8.
+El `.jar` queda en `build/libs/`.
 
-**Pruebas del núcleo (sin Minecraft):** `./tools/smoke-test.sh` (necesita JDK y ffmpeg).
+**Pruebas del núcleo (sin Minecraft):** `bash tools/smoke-test.sh` (necesita JDK y ffmpeg).
 
 ## Subir a GitHub
 ```bash

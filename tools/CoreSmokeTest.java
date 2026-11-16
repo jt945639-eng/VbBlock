@@ -202,7 +202,34 @@ public class CoreSmokeTest {
         check(onlyConcrete && world.size() == 20 * 10, "20x10 solo concrete: " + world.size() + " bloques");
         LampConfig z = new LampConfig(); z.blocks = 0; z.sanitize(256);
         check(z.blocks == LampConfig.BLOCKS_DEFAULT, "ninguna seleccion de bloques -> vuelve al valor por defecto");
-        check(Palette.of(both.blocksSpec()).size() == 16 && both.colorCount() == 16, "concrete solo = 16 colores");
+        check(Palette.ofMask(both.blocks).size() == 16 && both.colorCount() == 16, "concrete solo = 16 colores");
+        // seleccion bloque a bloque: se desactivan algunos y no deben aparecer en el video
+        long custom = LampConfig.BLOCKS_ALL;
+        java.util.Set<String> off = new java.util.HashSet<String>();
+        for (int i = 0; i < 48; i += 3) { custom &= ~(1L << i); off.add(Palette.catalog(i).toString()); }
+        LampConfig pk = lamp.cfg.copy(); pk.w = 20; pk.h = 10; pk.blocks = custom;
+        check(pk.colorCount() == 32 && Palette.ofMask(custom).size() == 32, "48 bloques menos 16 desactivados = 32");
+        c.update(lamp.id, pk);
+        tickFor(c, 1500); drain(c);
+        boolean noOff = true;
+        for (Palette.Entry e : world.values()) noOff &= !off.contains(e.toString());
+        check(noOff && world.size() == 200, "bloques desactivados no aparecen en la pantalla (" + world.size() + " bloques)");
+        LampConfig one = lamp.cfg.copy(); one.w = 20; one.h = 10; one.blocks = 1L << 20;
+        c.update(lamp.id, one);
+        tickFor(c, 1500); drain(c);
+        boolean single = true;
+        for (Palette.Entry e : world.values()) single &= e.toString().equals(Palette.catalog(20).toString());
+        check(single && world.size() == 200, "un solo bloque activado: todo es " + Palette.catalog(20));
+        LampConfig hi = new LampConfig(); hi.blocks = 0xFFFF000000000000L | 5L; hi.sanitize(256);
+        check(hi.blocks == 5L, "bits fuera de los 48 se descartan");
+        check(LampConfig.groupBitsToMask(1) == LampConfig.BLOCK_CONCRETE && LampConfig.groupBitsToMask(2) == LampConfig.BLOCK_WOOL
+            && LampConfig.groupBitsToMask(4) == LampConfig.BLOCK_TERRACOTTA && LampConfig.groupBitsToMask(0) == LampConfig.BLOCKS_DEFAULT
+            && LampConfig.groupBitsToMask(3) == LampConfig.BLOCKS_DEFAULT, "formato antiguo de 3 grupos -> mascara de 48 bits");
+        check(Palette.catalog(0).toString().equals("concrete:white") && Palette.catalog(16).toString().equals("wool:white")
+            && Palette.catalog(47).toString().equals("terracotta:black"), "orden del catalogo");
+        boolean threw = false;
+        try { Palette.ofMask(0); } catch (IllegalArgumentException ex) { threw = true; }
+        check(threw, "paleta vacia -> error");
         // volver a 16x9 con los bloques por defecto para el resto de pruebas
         LampConfig back2 = lamp.cfg.copy(); back2.w = 16; back2.h = 9; back2.blocks = LampConfig.BLOCKS_DEFAULT;
         c.update(lamp.id, back2);

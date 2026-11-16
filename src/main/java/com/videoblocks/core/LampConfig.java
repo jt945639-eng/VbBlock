@@ -15,9 +15,15 @@ public final class LampConfig {
     /** Al detener, la pantalla se queda congelada en el fotograma actual. */
     public static final int STOP_FREEZE = 1;
 
-    /** Tipos de bloque que puede usar la pantalla (mascara de bits). Todos son de supervivencia 1.12.2. */
-    public static final int BLOCK_CONCRETE = 1, BLOCK_WOOL = 2, BLOCK_TERRACOTTA = 4;
-    public static final int BLOCKS_DEFAULT = BLOCK_CONCRETE | BLOCK_WOOL;
+    /**
+     * Bloques que puede usar la pantalla: mascara de 48 bits, un bit por bloque del catalogo
+     * (bits 0-15 concrete, 16-31 lana, 32-47 terracota; orden de tintes de Palette). Todos son de supervivencia 1.12.2.
+     */
+    public static final long BLOCK_CONCRETE = 0xFFFFL;
+    public static final long BLOCK_WOOL = 0xFFFFL << 16;
+    public static final long BLOCK_TERRACOTTA = 0xFFFFL << 32;
+    public static final long BLOCKS_ALL = BLOCK_CONCRETE | BLOCK_WOOL | BLOCK_TERRACOTTA;
+    public static final long BLOCKS_DEFAULT = BLOCK_CONCRETE | BLOCK_WOOL;
 
     public String src = "";
     public String title = "";
@@ -25,7 +31,7 @@ public final class LampConfig {
     public boolean loop = true, fit = true, dither = false;
     public int mode = MODE_PULSE;
     public int stopMode = STOP_POSTER;
-    public int blocks = BLOCKS_DEFAULT;
+    public long blocks = BLOCKS_DEFAULT;
 
     public LampConfig copy() {
         LampConfig c = new LampConfig();
@@ -56,9 +62,9 @@ public final class LampConfig {
         fps = clamp(fps, 1, 20);
         mode = clamp(mode, 0, 1);
         stopMode = clamp(stopMode, 0, 1);
-        blocks &= 7;
+        blocks &= BLOCKS_ALL;
         if (blocks == 0) {
-            blocks = BLOCKS_DEFAULT; // siempre debe quedar al menos un tipo de bloque
+            blocks = BLOCKS_DEFAULT; // siempre debe quedar al menos un bloque
         }
         if (title.isEmpty()) {
             String t = src;
@@ -74,29 +80,44 @@ public final class LampConfig {
         return this;
     }
 
-    /** Lista para Palette.of(): "concrete,wool". */
-    public String blocksSpec() {
-        StringBuilder sb = new StringBuilder();
-        if ((blocks & BLOCK_CONCRETE) != 0) {
-            sb.append("concrete,");
+    /** Convierte el formato antiguo (3 bits: 1 concrete, 2 lana, 4 terracota) a la mascara de 48 bits. */
+    public static long groupBitsToMask(int old) {
+        long m = 0;
+        if ((old & 1) != 0) {
+            m |= BLOCK_CONCRETE;
         }
-        if ((blocks & BLOCK_WOOL) != 0) {
-            sb.append("wool,");
+        if ((old & 2) != 0) {
+            m |= BLOCK_WOOL;
         }
-        if ((blocks & BLOCK_TERRACOTTA) != 0) {
-            sb.append("terracotta,");
+        if ((old & 4) != 0) {
+            m |= BLOCK_TERRACOTTA;
         }
-        return sb.substring(0, sb.length() - 1);
+        return m == 0 ? BLOCKS_DEFAULT : m;
     }
 
-    /** Texto corto para el menu: "concrete + lana". */
+    public boolean hasBlock(int index) {
+        return index >= 0 && index < 48 && (blocks & (1L << index)) != 0;
+    }
+
+    /** Texto corto para el menu: "concrete 16, lana 12". */
     public String blocksSummary() {
-        return blocksSpec().replace("wool", "lana").replace("terracotta", "terracota").replace(",", " + ");
+        String[] names = {"concrete", "lana", "terracota"};
+        StringBuilder sb = new StringBuilder();
+        for (int g = 0; g < 3; g++) {
+            int n = Long.bitCount((blocks >>> (16 * g)) & 0xFFFFL);
+            if (n > 0) {
+                if (sb.length() > 0) {
+                    sb.append(", ");
+                }
+                sb.append(names[g]).append(' ').append(n);
+            }
+        }
+        return sb.toString();
     }
 
-    /** Cantidad de colores distintos disponibles (16 por tipo de bloque). */
+    /** Cantidad de bloques (colores) activos, de 1 a 48. */
     public int colorCount() {
-        return 16 * Integer.bitCount(blocks & 7);
+        return Long.bitCount(blocks & BLOCKS_ALL);
     }
 
     /** true si no hace falta reiniciar ffmpeg al pasar de this a o. */

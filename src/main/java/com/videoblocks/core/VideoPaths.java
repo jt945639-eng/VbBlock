@@ -15,6 +15,47 @@ public final class VideoPaths {
         return l.startsWith("http://") || l.startsWith("https://");
     }
 
+    /** true si el origen es un GIF (por la extension o, en archivos locales, por su cabecera "GIF"). */
+    public static boolean isGif(String src) {
+        if (src == null) {
+            return false;
+        }
+        String s = src.trim().toLowerCase();
+        int q = s.indexOf('?');
+        if (q >= 0) {
+            s = s.substring(0, q);
+        }
+        int hash = s.indexOf('#');
+        if (hash >= 0) {
+            s = s.substring(0, hash);
+        }
+        if (s.endsWith(".gif")) {
+            return true;
+        }
+        if (isUrl(src)) {
+            return false;
+        }
+        File f = new File(src.trim());
+        if (!f.isFile()) {
+            return false;
+        }
+        java.io.InputStream in = null;
+        try {
+            in = new java.io.FileInputStream(f);
+            byte[] h = new byte[3];
+            return in.read(h) == 3 && h[0] == 'G' && h[1] == 'I' && h[2] == 'F';
+        } catch (java.io.IOException e) {
+            return false;
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (java.io.IOException ignored) {
+                }
+            }
+        }
+    }
+
     /** @throws IllegalArgumentException con un mensaje listo para mostrar al jugador. */
     public static String resolve(String src) {
         if (src == null || src.trim().isEmpty()) {

@@ -35,7 +35,7 @@ public final class LampController {
     private final Map<String, Boolean> lastPowered = new HashMap<String, Boolean>();
     private final List<ScreenManager.Msg> messages = new ArrayList<ScreenManager.Msg>();
     private boolean dirty;
-    private final Map<Integer, Palette> palettes = new HashMap<Integer, Palette>();
+    private final Map<Long, Palette> palettes = new HashMap<Long, Palette>();
 
     // ---- registro ----
 
@@ -177,12 +177,13 @@ public final class LampController {
         }
     }
 
-    private Palette palette(int mask) {
+    private Palette palette(long mask) {
         Palette p = palettes.get(mask);
         if (p == null) {
-            LampConfig c = new LampConfig();
-            c.blocks = mask;
-            p = Palette.of(c.sanitize(maxSide).blocksSpec());
+            if (palettes.size() >= 64) {
+                palettes.clear(); // cada paleta pesa ~32 KB; no dejar que crezca sin limite
+            }
+            p = Palette.ofMask(mask);
             palettes.put(mask, p);
         }
         return p;
