@@ -318,10 +318,10 @@ public class CoreSmokeTest {
         LampConfig sx = new LampConfig(); sx.src = video; sx.w = 16; sx.h = 9; sx.fps = 60; sx.loop = false;
         c60.add(0, 0, 64, 0, 1, 0, "x", sx);
         loaded = true; lampPresent = true; powered = false;
-        for (int k = 0; k < 40; k++) { c60.tick(WA, SINKS, 5000); Thread.sleep(25); }
-        drain(c60);
+        for (int k = 0; k < 40; k++) { c60.tick(WA, SINKS, 5000); Thread.sleep(25); }   // exactamente 40 ticks (sin drain)
         double el = c60.screens.get(c60.list().iterator().next().id).elapsedSeconds();
-        check(el > 1.2 && el < 2.3, "a 60 fps tras 40 ticks (2 s de juego) el video va por " + String.format("%.2f", el) + " s (velocidad real)");
+        // con 1 fotograma por tick solo serian 40/60 = 0.67 s; con varios por tick ronda 2.0 s (menos si el decodificador va lento)
+        check(el > 0.9 && el < 2.2, "a 60 fps tras 40 ticks (2 s de juego) el video va por " + String.format("%.2f", el) + " s (velocidad real)");
         // orientacion: lampara mirando al norte con dithering
         c.clear();
         world.clear();
