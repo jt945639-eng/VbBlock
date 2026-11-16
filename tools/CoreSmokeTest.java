@@ -224,7 +224,8 @@ public class CoreSmokeTest {
         for (Palette.Entry e : world.values()) onlyConcrete &= e.group.equals("concrete");
         check(onlyConcrete && world.size() == 20 * 10, "20x10 solo concrete: " + world.size() + " bloques");
         LampConfig z = new LampConfig(); z.blocks = BlockSet.of(); z.sanitize(256);
-        check(z.blocks.equals(BlockSet.DEFAULT), "ninguna seleccion de bloques -> vuelve al valor por defecto");
+        check(z.blocks.equals(BlockSet.MINIMAL) && z.colorCount() == 2 && z.hasBlock(Palette.indexOf("wool:black"))
+            && z.hasBlock(Palette.indexOf("nether_end:glowstone")), "ninguna seleccion de bloques -> solo lana negra y piedra luminosa");
         check(Palette.ofMask(both.blocks).size() == 16 && both.colorCount() == 16, "concrete solo = 16 colores");
         // seleccion bloque a bloque: se desactivan algunos y no deben aparecer en el video
         BlockSet custom = BlockSet.ALL;
@@ -238,12 +239,17 @@ public class CoreSmokeTest {
         boolean noOff = true, usesOther = false;
         for (Palette.Entry e : world.values()) { noOff &= !off.contains(e.toString()); usesOther |= !e.group.equals("concrete") && !e.group.equals("wool"); }
         check(noOff && world.size() == 200, "bloques desactivados no aparecen en la pantalla (" + world.size() + " bloques)");
-        LampConfig one = lamp.cfg.copy(); one.w = 20; one.h = 10; one.blocks = BlockSet.of(100);
+        LampConfig one = lamp.cfg.copy(); one.w = 20; one.h = 10; one.blocks = BlockSet.of(100, 101);
         c.update(lamp.id, one);
         tickFor(c, 1500); drain(c);
         boolean single = true;
-        for (Palette.Entry e : world.values()) single &= e.toString().equals(Palette.catalog(100).toString());
-        check(single && world.size() == 200, "un solo bloque activado: todo es " + Palette.catalog(100));
+        for (Palette.Entry e : world.values()) single &= e.toString().equals(Palette.catalog(100).toString()) || e.toString().equals(Palette.catalog(101).toString());
+        check(single && world.size() == 200, "solo 2 bloques activados: todo es " + Palette.catalog(100) + " o " + Palette.catalog(101));
+        LampConfig lone = new LampConfig(); lone.blocks = BlockSet.of(100); lone.sanitize(256);
+        check(lone.colorCount() == 2 && lone.hasBlock(100) && lone.hasBlock(Palette.indexOf("wool:black")),
+            "con 1 solo bloque se completa hasta 2 (lana negra)");
+        LampConfig lone2 = new LampConfig(); lone2.blocks = BlockSet.of(Palette.indexOf("wool:black")); lone2.sanitize(256);
+        check(lone2.colorCount() == 2 && lone2.hasBlock(Palette.indexOf("nether_end:glowstone")), "solo lana negra -> se añade piedra luminosa");
         check(BlockSet.ofWords(~0L, ~0L, ~0L).equals(BlockSet.ALL) && BlockSet.ALL.count() == Palette.CATALOG_SIZE,
             "bits fuera del catalogo se descartan");
         check(LampConfig.groupBitsToSet(1).equals(BlockSet.range(0, 16)) && LampConfig.groupBitsToSet(2).equals(BlockSet.range(16, 32))
