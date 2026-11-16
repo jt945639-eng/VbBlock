@@ -3,6 +3,7 @@
  */
 package com.videoblocks;
 
+import com.videoblocks.core.BlockSet;
 import com.videoblocks.core.LampConfig;
 import com.videoblocks.core.LampEntry;
 import net.minecraft.nbt.NBTTagCompound;
@@ -24,7 +25,9 @@ public final class LampNBT {
         t.setBoolean("dither", c.dither);
         t.setInteger("mode", c.mode);
         t.setInteger("stop", c.stopMode);
-        t.setLong("blockMask", c.blocks);
+        t.setLong("bs0", c.blocks.word(0));
+        t.setLong("bs1", c.blocks.word(1));
+        t.setLong("bs2", c.blocks.word(2));
         return t;
     }
 
@@ -50,12 +53,14 @@ public final class LampNBT {
         c.dither = t.getBoolean("dither");
         c.mode = t.getInteger("mode");
         c.stopMode = t.getInteger("stop");
-        if (t.hasKey("blockMask")) {
-            c.blocks = t.getLong("blockMask");
+        if (t.hasKey("bs0")) {
+            c.blocks = BlockSet.ofWords(t.getLong("bs0"), t.getLong("bs1"), t.getLong("bs2"));
+        } else if (t.hasKey("blockMask")) {
+            c.blocks = BlockSet.ofWords(t.getLong("blockMask"), 0L, 0L); // version con 48 bloques (indices 0-47 iguales)
         } else if (t.hasKey("blocks")) {
-            c.blocks = LampConfig.groupBitsToMask(t.getInteger("blocks")); // guardado con la version anterior
+            c.blocks = LampConfig.groupBitsToSet(t.getInteger("blocks")); // version con 3 grupos
         } else {
-            c.blocks = LampConfig.BLOCKS_DEFAULT;
+            c.blocks = BlockSet.DEFAULT;
         }
         return c.sanitize(VideoBlocksMod.LAMPS.maxSide);
     }

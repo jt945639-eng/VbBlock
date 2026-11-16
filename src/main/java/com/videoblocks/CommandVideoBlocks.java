@@ -180,7 +180,7 @@ public class CommandVideoBlocks extends CommandBase {
             }
             case "play": {
                 if (args.length < 2) {
-                    throw new WrongUsageException("/vblocks play <archivo|url> [fps 1-20] [loop]");
+                    throw new WrongUsageException("/vblocks play <archivo|url> [fps 1-60] [loop]");
                 }
                 Screen s = need();
                 int i = 1;
@@ -195,7 +195,7 @@ public class CommandVideoBlocks extends CommandBase {
                     name.append(args[i]);
                 }
                 if (name.length() == 0) {
-                    throw new WrongUsageException("/vblocks play <archivo|url> [fps 1-20] [loop]");
+                    throw new WrongUsageException("/vblocks play <archivo|url> [fps 1-60] [loop]");
                 }
                 int fps = s.fps;
                 boolean loop = false;
@@ -203,7 +203,7 @@ public class CommandVideoBlocks extends CommandBase {
                     if (args[i].equalsIgnoreCase("loop")) {
                         loop = true;
                     } else {
-                        fps = parseInt(args[i], 1, 20);
+                        fps = parseInt(args[i], 1, 60);
                     }
                 }
                 s.play(VideoBlocksMod.LAMPS.ffmpeg, resolveInput(name.toString()), fps, loop, 0);
@@ -224,10 +224,10 @@ public class CommandVideoBlocks extends CommandBase {
                 break;
             case "fps": {
                 if (args.length < 2) {
-                    throw new WrongUsageException("/vblocks fps <1-20>");
+                    throw new WrongUsageException("/vblocks fps <1-60>");
                 }
                 Screen s = need();
-                int n = parseInt(args[1], 1, 20);
+                int n = parseInt(args[1], 1, 60);
                 if (s.input != null) {
                     s.play(s.ffmpeg, s.input, n, s.loop, s.elapsedSeconds());
                 } else {

@@ -15,15 +15,8 @@ public final class LampConfig {
     /** Al detener, la pantalla se queda congelada en el fotograma actual. */
     public static final int STOP_FREEZE = 1;
 
-    /**
-     * Bloques que puede usar la pantalla: mascara de 48 bits, un bit por bloque del catalogo
-     * (bits 0-15 concrete, 16-31 lana, 32-47 terracota; orden de tintes de Palette). Todos son de supervivencia 1.12.2.
-     */
-    public static final long BLOCK_CONCRETE = 0xFFFFL;
-    public static final long BLOCK_WOOL = 0xFFFFL << 16;
-    public static final long BLOCK_TERRACOTTA = 0xFFFFL << 32;
-    public static final long BLOCKS_ALL = BLOCK_CONCRETE | BLOCK_WOOL | BLOCK_TERRACOTTA;
-    public static final long BLOCKS_DEFAULT = BLOCK_CONCRETE | BLOCK_WOOL;
+    /** Maximo de fotogramas por segundo del video. */
+    public static final int MAX_FPS = 60;
 
     public String src = "";
     public String title = "";
@@ -31,7 +24,7 @@ public final class LampConfig {
     public boolean loop = true, fit = true, dither = false;
     public int mode = MODE_PULSE;
     public int stopMode = STOP_POSTER;
-    public long blocks = BLOCKS_DEFAULT;
+    public BlockSet blocks = BlockSet.DEFAULT;
 
     public LampConfig copy() {
         LampConfig c = new LampConfig();
@@ -59,12 +52,11 @@ public final class LampConfig {
         title = title == null ? "" : title.trim();
         w = clamp(w, 1, maxSide);
         h = clamp(h, 1, maxSide);
-        fps = clamp(fps, 1, 20);
+        fps = clamp(fps, 1, MAX_FPS);
         mode = clamp(mode, 0, 1);
         stopMode = clamp(stopMode, 0, 1);
-        blocks &= BLOCKS_ALL;
-        if (blocks == 0) {
-            blocks = BLOCKS_DEFAULT; // siempre debe quedar al menos un bloque
+        if (blocks == null || blocks.isEmpty()) {
+            blocks = BlockSet.DEFAULT; // siempre debe quedar al menos un bloque
         }
         if (title.isEmpty()) {
             String t = src;
@@ -80,44 +72,49 @@ public final class LampConfig {
         return this;
     }
 
-    /** Convierte el formato antiguo (3 bits: 1 concrete, 2 lana, 4 terracota) a la mascara de 48 bits. */
-    public static long groupBitsToMask(int old) {
-        long m = 0;
+    /** Convierte el formato antiguo (3 bits: 1 concrete, 2 lana, 4 terracota) a un conjunto de bloques. */
+    public static BlockSet groupBitsToSet(int old) {
+        BlockSet s = BlockSet.of();
         if ((old & 1) != 0) {
-            m |= BLOCK_CONCRETE;
+            s = s.with(Palette.categoryIndices(0), true);
         }
         if ((old & 2) != 0) {
-            m |= BLOCK_WOOL;
+            s = s.with(Palette.categoryIndices(1), true);
         }
         if ((old & 4) != 0) {
-            m |= BLOCK_TERRACOTTA;
+            s = s.with(Palette.categoryIndices(2), true);
         }
-        return m == 0 ? BLOCKS_DEFAULT : m;
+        return s.isEmpty() ? BlockSet.DEFAULT : s;
     }
 
     public boolean hasBlock(int index) {
-        return index >= 0 && index < 48 && (blocks & (1L << index)) != 0;
+        return blocks.has(index);
     }
 
-    /** Texto corto para el menu: "concrete 16, lana 12". */
+    /** Texto corto para el menu: "concrete 16, lana 12" o "140 bloques". */
     public String blocksSummary() {
-        String[] names = {"concrete", "lana", "terracota"};
+        int total = blocks.count();
+        if (total == Palette.CATALOG_SIZE) {
+            return "todos los bloques (" + total + ")";
+        }
         StringBuilder sb = new StringBuilder();
-        for (int g = 0; g < 3; g++) {
-            int n = Long.bitCount((blocks >>> (16 * g)) & 0xFFFFL);
+        int cats = 0;
+        for (int c = 0; c < Palette.categoryCount(); c++) {
+            int n = blocks.count(Palette.categoryIndices(c));
             if (n > 0) {
+                cats++;
                 if (sb.length() > 0) {
                     sb.append(", ");
                 }
-                sb.append(names[g]).append(' ').append(n);
+                sb.append(Palette.categoryTitle(c).toLowerCase()).append(' ').append(n);
             }
         }
-        return sb.toString();
+        return cats <= 3 ? sb.toString() : total + " bloques de " + cats + " categorías";
     }
 
-    /** Cantidad de bloques (colores) activos, de 1 a 48. */
+    /** Cantidad de bloques (colores) activos. */
     public int colorCount() {
-        return Long.bitCount(blocks & BLOCKS_ALL);
+        return blocks.count();
     }
 
     /** true si no hace falta reiniciar ffmpeg al pasar de this a o. */

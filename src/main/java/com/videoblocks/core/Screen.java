@@ -205,8 +205,10 @@ public final class Screen {
     /** @return true si no queda nada pendiente por colocar. */
     public boolean tick(BlockSink sink, int budget) {
         if (!dying && source != null && (!paused || framesShown == 0)) {
-            acc = Math.min(acc + fps / 20.0, 2.0);
-            if (acc >= 1.0) {
+            // El juego avanza 20 veces por segundo; con mas de 20 fps se consumen varios fotogramas por tick
+            // (se queda el ultimo) para que el video vaya a su velocidad real.
+            acc = Math.min(acc + fps / 20.0, 4.0);
+            while (acc >= 1.0 && source != null) {
                 byte[] f = source.poll();
                 if (f != null && f.length == target.length) {
                     acc -= 1.0;
@@ -215,10 +217,13 @@ public final class Screen {
                     if (posterOnly) {
                         closeSource(); // ya tenemos el primer fotograma: la imagen queda fija sin ffmpeg
                     }
-                } else if (f == null && source.isFinished()) {
-                    String err = source.error();
-                    message = err != null ? "Error de video: " + err : "Reproduccion terminada.";
-                    closeSource();
+                } else {
+                    if (f == null && source.isFinished()) {
+                        String err = source.error();
+                        message = err != null ? "Error de video: " + err : "Reproduccion terminada.";
+                        closeSource();
+                    }
+                    break;
                 }
             }
         }

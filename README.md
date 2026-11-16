@@ -17,13 +17,14 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
 2. **Nueva lámpara** → elige el video con **Examinar...** (archivo de tu PC) o pega una **URL** (http/https).
    El editor tiene dos pestañas:
    - **Video:** archivo/URL, nombre, **resolución** (ancho × alto en bloques, con atajos 64×36, 128×72, 192×108 y 256×144),
-     **FPS** (1-20), bucle y ajuste de imagen (respetar proporción o estirar).
-   - **Opciones y bloques:** modo de Redstone, qué hacer al detener, dithering y el botón **Bloques**: abre la lista de los
-     **48 bloques** (16 de concrete, 16 de lana y 16 de terracota), cada uno con su interruptor. Los desactivados **no se generan**
+     **FPS** (1-60), bucle y ajuste de imagen (respetar proporción o estirar).
+   - **Opciones y bloques:** modo de Redstone, qué hacer al detener, dithering y el botón **Bloques**: abre la lista de **todos los
+     bloques sólidos de supervivencia (176)**, por categorías (< > para cambiar de página), cada uno con su interruptor.
+     Por defecto van activados solo concrete y lana (los demás empiezan desactivados). La última categoría, **Desactivados**, lista todos los que están apagados para que los actives desde ahí. Los desactivados **no se generan**
      en el video (mínimo uno activo). Más bloques = más colores y una imagen más fiel.
 3. **Crear lámpara**: el video queda marcado y la lámpara llega a tu inventario.
 4. **Colócala en el suelo** mirando hacia donde quieres la pantalla: la pantalla se genera **acostada en el suelo**
-   (horizontal, nunca de pie), a la altura de la lámpara y justo delante de ella, con la parte de arriba del video
+   (horizontal, nunca de pie), a la altura de la lámpara y **a un bloque de distancia** de ella (queda un hueco de aire entre la lámpara y la pantalla), con la parte de arriba del video
    hacia donde miras, y el video empieza a reproducirse.
 5. **Redstone** (palanca, botón, comparador, lo que sea):
    - *Cada pulso alterna* (por defecto): cada señal nueva detiene el video o lo reproduce de nuevo desde el inicio.
@@ -49,6 +50,10 @@ En el teléfono no existe ffmpeg, así que usa **GIFs** (archivo o URL): el mod 
 - **Servidor dedicado:** el servidor es quien lee el archivo, así que usa una URL o archivos que estén en la carpeta
   `videos/` del servidor (el selector del PC solo sirve si el servidor corre en tu mismo PC).
 
+**Sobre los 60 FPS:** Minecraft actualiza el mundo 20 veces por segundo, así que con 30-60 fps el video va a su velocidad
+real, pero solo se ven 20 cambios por segundo (se salta a lo más reciente). Además, cada fotograma cambia muchos bloques:
+a más resolución y fps, baja `blocksPerTick` o espera lag. Para el teléfono usa 10-20 fps.
+
 ## Comandos (opcionales)
 | Comando | Qué hace |
 |---|---|
@@ -60,18 +65,24 @@ En el teléfono no existe ffmpeg, así que usa **GIFs** (archivo o URL): el mod 
 - `ffmpegPath`: ruta de ffmpeg.
 - `maxSide`: ancho/alto máximo de una pantalla (256 por defecto).
 - `blocksPerTick`: tope de bloques cambiados por tick entre todas las pantallas (5000). Bájalo si hay lag.
-- `palette`: bloques de la pantalla manual de `/vblocks create` (`concrete`, `wool`, `terracotta` o `all`). Las lámparas eligen los suyos en el menú.
+- `palette`: bloques de la pantalla manual de `/vblocks create` (`concrete`, `wool`, `terracotta`, `stone`, `bricks`, `nether_end`, `sand`, `wood`, `ore`, `misc`, `glazed` o `all`). Las lámparas eligen los suyos en el menú.
 - `requireOp`: si es `true`, solo operadores (y el dueño del mundo en un jugador/LAN) usan lámparas y menú.
 
 ## Bloques (todo el video es de bloques de supervivencia 1.12.2)
 Cada píxel del video es un **bloque real** del mundo (nada de mapas, entidades ni texturas). Solo se usan bloques completos
 de vanilla 1.12.2 que se consiguen en modo supervivencia, y el código rechaza cualquier otro:
 
-| Bloque | Cómo se consigue en supervivencia |
-|---|---|
-| **Concrete** (16 colores) | polvo de concrete (4 arena + 4 grava + 1 tinte) puesto en agua |
-| **Lana** (16 colores) | ovejas, o 4 hilos; se tiñe con tinte |
-| **Terracota** (16 colores, opcional en `palette`) | arcilla cocida en horno + 8 terracota y 1 tinte |
+Categorías disponibles (176 bloques): concrete, lana, terracota, **piedra** (piedra, granito, diorita, andesita y sus pulidas,
+adoquín, ladrillos de piedra, obsidiana), **ladrillos/cuarzo/prismarina**, **Nether y End**, **arenisca, tierra y arcilla**,
+**madera** (tablones y troncos), **minerales y metales** (menas y bloques de carbón, hierro, oro, diamante, esmeralda, lapislázuli),
+**otros** (hielo compacto, nieve, esponja, hueso, melón, calabaza, heno) y **terracota vidriada**.
+
+Además hay categorías de bloques **desactivados por defecto** que conviene activar con cuidado: cemento en polvo y arena/grava
+(**se caen** si no tienen suelo debajo), Redstone/magma/arena de almas (el bloque de Redstone da señal y el **magma quema al pisarlo**;
+la lámpara de Redstone encendida solo se queda encendida si recibe señal), bloques con función (mesa, horno, tocadiscos, observador...)
+y naturaleza (hierba, champiñones, calabaza iluminada). Si hay un bloque de Redstone en la pantalla, el hueco de un bloque evita que toque la lámpara del video.
+
+**No están en la lista** (a propósito): cristal, hielo, limo, TNT, pistones, bloques de comandos, bedrock y dispensador.
 
 Las barras negras (modo "respetar proporción") y el primer fotograma también son bloques (concrete negro). La pantalla
 la genera el mod sin gastar bloques de tu inventario.

@@ -53,7 +53,7 @@ public class ItemVideoLamp extends ItemBlock {
                 LampEntry e = VideoBlocksMod.LAMPS.add(world.provider.getDimension(), pos.getX(), pos.getY(),
                     pos.getZ(), d.getX(), d.getZ(), player.getName(), cfg);
                 player.sendMessage(new TextComponentString("[VideoBlocks] Lámpara '" + e.cfg.title
-                    + "' colocada: la pantalla de " + e.cfg.w + "x" + e.cfg.h + " se genera delante de ella."));
+                    + "' colocada: la pantalla de " + e.cfg.w + "x" + e.cfg.h + " se genera delante de ella, a un bloque de distancia."));
             }
         }
         return ok;
@@ -79,6 +79,6 @@ public class ItemVideoLamp extends ItemBlock {
             : "cada pulso activa/detiene"));
         tooltip.add("Bloques: " + c.blocksSummary() + " (" + c.colorCount() + " colores)");
         tooltip.add("Al detenerse: " + (c.stopMode == LampConfig.STOP_POSTER ? "vuelve al primer fotograma" : "queda congelada"));
-        tooltip.add("Colócala en el suelo: la pantalla sale delante de ti.");
+        tooltip.add("Colócala en el suelo: la pantalla sale delante de ti, a un bloque de distancia.");
     }
 }

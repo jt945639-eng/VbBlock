@@ -3,6 +3,7 @@
  */
 package com.videoblocks.net;
 
+import com.videoblocks.core.BlockSet;
 import com.videoblocks.core.LampConfig;
 import com.videoblocks.core.LampEntry;
 import io.netty.buffer.ByteBuf;
@@ -23,7 +24,9 @@ final class NetIO {
         b.writeBoolean(c.dither);
         b.writeInt(c.mode);
         b.writeInt(c.stopMode);
-        b.writeLong(c.blocks);
+        b.writeLong(c.blocks.word(0));
+        b.writeLong(c.blocks.word(1));
+        b.writeLong(c.blocks.word(2));
     }
 
     static LampConfig readConfig(ByteBuf b) {
@@ -38,7 +41,7 @@ final class NetIO {
         c.dither = b.readBoolean();
         c.mode = b.readInt();
         c.stopMode = b.readInt();
-        c.blocks = b.readLong();
+        c.blocks = BlockSet.ofWords(b.readLong(), b.readLong(), b.readLong());
         return c;
     }
 

@@ -27,16 +27,10 @@ final class WorldSink implements BlockSink {
     private static IBlockState stateOf(Palette.Entry e) {
         IBlockState s = CACHE.get(e);
         if (s == null) {
-            // Solo bloques de vanilla 1.12.2 que se consiguen en supervivencia. Cualquier otro grupo es un error.
-            Block b;
-            if (e.group.equals("concrete")) {
-                b = Blocks.CONCRETE;
-            } else if (e.group.equals("wool")) {
-                b = Blocks.WOOL;
-            } else if (e.group.equals("terracotta")) {
-                b = Blocks.STAINED_HARDENED_CLAY;
-            } else {
-                throw new IllegalStateException("Bloque no permitido en la pantalla: " + e);
+            // Solo bloques solidos de vanilla 1.12.2 del catalogo de Palette.
+            Block b = Block.getBlockFromName("minecraft:" + e.block);
+            if (b == null || b == Blocks.AIR) {
+                throw new IllegalStateException("Bloque desconocido en el catalogo: " + e.block);
             }
             s = b.getStateFromMeta(e.meta);
             CACHE.put(e, s);

@@ -35,7 +35,7 @@ public final class LampController {
     private final Map<String, Boolean> lastPowered = new HashMap<String, Boolean>();
     private final List<ScreenManager.Msg> messages = new ArrayList<ScreenManager.Msg>();
     private boolean dirty;
-    private final Map<Long, Palette> palettes = new HashMap<Long, Palette>();
+    private final Map<BlockSet, Palette> palettes = new HashMap<BlockSet, Palette>();
 
     // ---- registro ----
 
@@ -132,7 +132,7 @@ public final class LampController {
             return;
         }
         boolean dims = old.w != nc.w || old.h != nc.h;
-        boolean blocks = old.blocks != nc.blocks;
+        boolean blocks = !old.blocks.equals(nc.blocks);
         boolean video = !old.sameVideo(nc);
         // Si solo cambian fps/ajuste, el video sigue en el mismo segundo; si cambia el archivo, empieza de cero.
         double at = old.src.equals(nc.src) && s.isPlaying() && !s.isPoster() ? s.elapsedSeconds() : 0;
@@ -177,10 +177,10 @@ public final class LampController {
         }
     }
 
-    private Palette palette(long mask) {
+    private Palette palette(BlockSet mask) {
         Palette p = palettes.get(mask);
         if (p == null) {
-            if (palettes.size() >= 64) {
+            if (palettes.size() >= 32) {
                 palettes.clear(); // cada paleta pesa ~32 KB; no dejar que crezca sin limite
             }
             p = Palette.ofMask(mask);
@@ -190,8 +190,9 @@ public final class LampController {
     }
 
     private Screen buildScreen(LampEntry e) {
-        // La pantalla queda en el suelo, en la misma capa que la lampara, empezando justo delante de ella.
-        Screen s = screens.create(e.id, e.dim, e.x + e.dx, e.y, e.z + e.dz, e.dx, e.dz,
+        // La pantalla queda en el suelo, en la misma capa que la lampara, con un bloque de separacion
+        // (asi bloques como el de redstone de la pantalla no tocan la lampara ni le dan senal).
+        Screen s = screens.create(e.id, e.dim, e.x + 2 * e.dx, e.y, e.z + 2 * e.dz, e.dx, e.dz,
             e.cfg.w, e.cfg.h, true, palette(e.cfg.blocks));
         s.fit = e.cfg.fit;
         s.mapper.dither = e.cfg.dither;

@@ -67,7 +67,7 @@ public class VideoBlocksMod {
         blocksPerTick = cfg.getInt("blocksPerTick", "general", blocksPerTick, 100, 200000,
             "Maximo de bloques que se cambian por tick entre todas las pantallas. Bajalo si hay lag.");
         LAMPS.paletteSpec = cfg.getString("palette", "general", LAMPS.paletteSpec,
-            "Bloques usados como pixeles: concrete, wool, terracotta o all (combinables con comas).");
+            "Bloques de la pantalla manual de /vblocks create: concrete, wool, terracotta, stone, bricks, nether_end, sand, wood, ore, misc, glazed o all (combinables con comas).");
         requireOp = cfg.getBoolean("requireOp", "general", requireOp,
             "Si es true, solo operadores (y el dueno del mundo en un solo jugador/LAN) usan lamparas y menu.");
         if (cfg.hasChanged()) {

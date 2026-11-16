@@ -5,6 +5,7 @@ package com.videoblocks.client;
 
 import com.videoblocks.VideoBlocksMod;
 import com.videoblocks.core.LampConfig;
+import com.videoblocks.core.Palette;
 import com.videoblocks.net.PacketCreateLamp;
 import com.videoblocks.net.PacketLampAction;
 import java.awt.FileDialog;
@@ -127,7 +128,7 @@ public class GuiLampEditor extends GuiScreen {
             bStop.displayString = "Al detener: " + (cfg.stopMode == LampConfig.STOP_POSTER
                 ? "volver al primer fotograma" : "dejar la imagen congelada");
             bDither.displayString = "Dithering (más matices de color): " + (cfg.dither ? "Sí" : "No");
-            bBlocks.displayString = "Bloques: " + cfg.colorCount() + " de 48 activos  (clic para elegir)";
+            bBlocks.displayString = "Bloques: " + cfg.colorCount() + " de " + Palette.CATALOG_SIZE + " activos  (clic para elegir)";
         }
     }
 
@@ -351,12 +352,12 @@ public class GuiLampEditor extends GuiScreen {
             drawString(fontRenderer, "Nombre de la lámpara", cx - 150, y0 + 62, 0xAAAAAA);
             drawString(fontRenderer, "Ancho (bloques)", cx - 150, y0 + 96, 0xAAAAAA);
             drawString(fontRenderer, "Alto (bloques)", cx - 45, y0 + 96, 0xAAAAAA);
-            drawString(fontRenderer, "FPS (1-20)", cx + 60, y0 + 96, 0xAAAAAA);
+            drawString(fontRenderer, "FPS (1-60)", cx + 60, y0 + 96, 0xAAAAAA);
             for (GuiTextField f : fields()) {
                 f.drawTextBox();
             }
         } else {
-            drawString(fontRenderer, "Bloques que puede usar la pantalla (todos de supervivencia 1.12.2)",
+            drawString(fontRenderer, "Bloques que puede usar la pantalla (sólidos de supervivencia 1.12.2)",
                 cx - 150, y0 + 108, 0xAAAAAA);
             drawCenteredString(fontRenderer, cfg.blocksSummary() + (cfg.colorCount() <= 16
                 ? "  (pocos: la imagen perderá matices)" : ""), cx, y0 + 148, 0xCCCCCC);

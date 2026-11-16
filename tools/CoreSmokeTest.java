@@ -79,13 +79,36 @@ public class CoreSmokeTest {
 
         // todo el video debe ser de bloques de supervivencia 1.12.2
         Palette all = Palette.of("all");
-        boolean onlySurvival = all.size() == 48;
+        boolean onlySurvival = all.size() == Palette.CATALOG_SIZE;
+        java.util.Set<String> seen = new java.util.HashSet<String>();
         for (int i = 0; i < all.size(); i++) {
             Palette.Entry e = all.get(i);
             onlySurvival &= Palette.SURVIVAL_GROUPS.contains(e.group) && e.meta >= 0 && e.meta <= 15;
+            onlySurvival &= seen.add(e.block + "/" + e.meta);   // sin bloques repetidos
         }
-        check(onlySurvival, "la paleta completa son 48 bloques: concrete/wool/terracotta con meta 0-15");
-        check(Palette.groupNames().equals(Palette.SURVIVAL_GROUPS), "no existen otros grupos de bloques");
+        check(onlySurvival, "catalogo completo: " + all.size() + " bloques distintos");
+        String[] banned = {"glass", "stained_glass", "ice", "packed_ice", "frosted_ice", "slime", "tnt", "piston", "sticky_piston",
+            "command_block", "chain_command_block", "repeating_command_block", "bedrock", "dispenser"};
+        boolean noBad = true;
+        for (int i = 0; i < all.size(); i++) {
+            for (String bn : banned) noBad &= !all.get(i).block.equals(bn);
+        }
+        check(noBad, "no estan los bloques que el usuario pidio no incluir (cristal, hielo, limo, TNT, pistones, comandos, bedrock, dispensador)");
+        boolean defaultsSafe = true;
+        for (int i = 0; i < Palette.CATALOG_SIZE; i++) {
+            if (BlockSet.DEFAULT.has(i)) defaultsSafe &= Palette.catalog(i).group.equals("concrete") || Palette.catalog(i).group.equals("wool");
+        }
+        check(defaultsSafe && BlockSet.DEFAULT.count() == 32, "por defecto solo concrete y lana; el resto viene desactivado");
+        boolean has = false;
+        for (int i = 0; i < Palette.CATALOG_SIZE; i++) has |= Palette.catalog(i).block.equals("lit_redstone_lamp");
+        check(has, "la lampara de redstone encendida esta en el catalogo");
+        int catTotal = 0;
+        for (int ci = 0; ci < Palette.categoryCount(); ci++) {
+            int n = Palette.categoryIndices(ci).length;
+            check(n >= 1, "categoria '" + Palette.categoryTitle(ci) + "' cabe en una pagina: " + n);
+            catTotal += n;
+        }
+        check(catTotal == Palette.CATALOG_SIZE, "todas las categorias suman el catalogo (" + catTotal + ")");
 
         // ---------- lamparas ----------
         LampController c = new LampController();
@@ -105,7 +128,7 @@ public class CoreSmokeTest {
         }
         check(allBlocks, "los 576 pixeles son bloques de supervivencia, ninguno vacio (sin huecos ni barras no-bloque)");
         check(b[2] == 64 && b[3] == 64, "la pantalla es plana en la capa y=64 (suelo)");
-        check(b[0] == 11 && b[1] == 11 + 17, "empieza justo delante de la lampara (x 11..28)");
+        check(b[0] == 12 && b[1] == 12 + 17, "empieza a un bloque de distancia de la lampara (x 12..29, hueco en x=11)");
         check(b[4] == 10 - 16 && b[5] == 10 + 15, "centrada en z (" + b[4] + ".." + b[5] + ")");
         check(!world.containsKey("10,64,10"), "la lampara misma no se pisa");
 
@@ -180,58 +203,63 @@ public class CoreSmokeTest {
         check(c.screens.get(lamp.id).fps == 15 && c.screens.get(lamp.id).isPlaying(), "fps en caliente: 15 fps y sigue reproduciendo");
 
         // tipos de bloque en caliente (mismo tamano: se redibuja sin borrar)
-        LampConfig wl = lamp.cfg.copy(); wl.blocks = LampConfig.BLOCK_WOOL;
+        LampConfig wl = lamp.cfg.copy(); wl.blocks = BlockSet.range(16, 32);
         c.update(lamp.id, wl);
         tickFor(c, 1000); drain(c);
         boolean onlyWool = true;
         for (Palette.Entry e : world.values()) onlyWool &= e.group.equals("wool");
         check(onlyWool && world.size() == 16 * 9, "solo lana: todos los bloques son lana (" + world.size() + " bloques, sin huecos)");
         check(c.screens.get(lamp.id).isPlaying(), "cambiar de bloques no detiene el video");
-        LampConfig tc = lamp.cfg.copy(); tc.blocks = LampConfig.BLOCK_TERRACOTTA | LampConfig.BLOCK_CONCRETE;
+        LampConfig tc = lamp.cfg.copy(); tc.blocks = BlockSet.range(0, 16).with(Palette.categoryIndices(2), true);
         c.update(lamp.id, tc);
         tickFor(c, 1000); drain(c);
         boolean tcOk = true;
         for (Palette.Entry e : world.values()) tcOk &= e.group.equals("terracotta") || e.group.equals("concrete");
         check(tcOk && world.size() == 16 * 9, "concrete + terracota: sin lana");
         // resolucion y bloques a la vez
-        LampConfig both = lamp.cfg.copy(); both.w = 20; both.h = 10; both.blocks = LampConfig.BLOCK_CONCRETE;
+        LampConfig both = lamp.cfg.copy(); both.w = 20; both.h = 10; both.blocks = BlockSet.range(0, 16);
         c.update(lamp.id, both);
         tickFor(c, 1500); drain(c);
         boolean onlyConcrete = true;
         for (Palette.Entry e : world.values()) onlyConcrete &= e.group.equals("concrete");
         check(onlyConcrete && world.size() == 20 * 10, "20x10 solo concrete: " + world.size() + " bloques");
-        LampConfig z = new LampConfig(); z.blocks = 0; z.sanitize(256);
-        check(z.blocks == LampConfig.BLOCKS_DEFAULT, "ninguna seleccion de bloques -> vuelve al valor por defecto");
+        LampConfig z = new LampConfig(); z.blocks = BlockSet.of(); z.sanitize(256);
+        check(z.blocks.equals(BlockSet.DEFAULT), "ninguna seleccion de bloques -> vuelve al valor por defecto");
         check(Palette.ofMask(both.blocks).size() == 16 && both.colorCount() == 16, "concrete solo = 16 colores");
         // seleccion bloque a bloque: se desactivan algunos y no deben aparecer en el video
-        long custom = LampConfig.BLOCKS_ALL;
+        BlockSet custom = BlockSet.ALL;
         java.util.Set<String> off = new java.util.HashSet<String>();
-        for (int i = 0; i < 48; i += 3) { custom &= ~(1L << i); off.add(Palette.catalog(i).toString()); }
+        for (int i = 0; i < Palette.CATALOG_SIZE; i += 3) { custom = custom.with(i, false); off.add(Palette.catalog(i).toString()); }
         LampConfig pk = lamp.cfg.copy(); pk.w = 20; pk.h = 10; pk.blocks = custom;
-        check(pk.colorCount() == 32 && Palette.ofMask(custom).size() == 32, "48 bloques menos 16 desactivados = 32");
+        check(pk.colorCount() == Palette.CATALOG_SIZE - off.size() && Palette.ofMask(custom).size() == pk.colorCount(),
+            "todos los bloques menos " + off.size() + " desactivados = " + pk.colorCount());
         c.update(lamp.id, pk);
         tickFor(c, 1500); drain(c);
-        boolean noOff = true;
-        for (Palette.Entry e : world.values()) noOff &= !off.contains(e.toString());
+        boolean noOff = true, usesOther = false;
+        for (Palette.Entry e : world.values()) { noOff &= !off.contains(e.toString()); usesOther |= !e.group.equals("concrete") && !e.group.equals("wool"); }
         check(noOff && world.size() == 200, "bloques desactivados no aparecen en la pantalla (" + world.size() + " bloques)");
-        LampConfig one = lamp.cfg.copy(); one.w = 20; one.h = 10; one.blocks = 1L << 20;
+        LampConfig one = lamp.cfg.copy(); one.w = 20; one.h = 10; one.blocks = BlockSet.of(100);
         c.update(lamp.id, one);
         tickFor(c, 1500); drain(c);
         boolean single = true;
-        for (Palette.Entry e : world.values()) single &= e.toString().equals(Palette.catalog(20).toString());
-        check(single && world.size() == 200, "un solo bloque activado: todo es " + Palette.catalog(20));
-        LampConfig hi = new LampConfig(); hi.blocks = 0xFFFF000000000000L | 5L; hi.sanitize(256);
-        check(hi.blocks == 5L, "bits fuera de los 48 se descartan");
-        check(LampConfig.groupBitsToMask(1) == LampConfig.BLOCK_CONCRETE && LampConfig.groupBitsToMask(2) == LampConfig.BLOCK_WOOL
-            && LampConfig.groupBitsToMask(4) == LampConfig.BLOCK_TERRACOTTA && LampConfig.groupBitsToMask(0) == LampConfig.BLOCKS_DEFAULT
-            && LampConfig.groupBitsToMask(3) == LampConfig.BLOCKS_DEFAULT, "formato antiguo de 3 grupos -> mascara de 48 bits");
+        for (Palette.Entry e : world.values()) single &= e.toString().equals(Palette.catalog(100).toString());
+        check(single && world.size() == 200, "un solo bloque activado: todo es " + Palette.catalog(100));
+        check(BlockSet.ofWords(~0L, ~0L, ~0L).equals(BlockSet.ALL) && BlockSet.ALL.count() == Palette.CATALOG_SIZE,
+            "bits fuera del catalogo se descartan");
+        check(LampConfig.groupBitsToSet(1).equals(BlockSet.range(0, 16)) && LampConfig.groupBitsToSet(2).equals(BlockSet.range(16, 32))
+            && LampConfig.groupBitsToSet(4).equals(BlockSet.range(32, 48)) && LampConfig.groupBitsToSet(0).equals(BlockSet.DEFAULT)
+            && LampConfig.groupBitsToSet(3).equals(BlockSet.DEFAULT), "formato antiguo de 3 grupos -> conjunto de bloques");
         check(Palette.catalog(0).toString().equals("concrete:white") && Palette.catalog(16).toString().equals("wool:white")
-            && Palette.catalog(47).toString().equals("terracotta:black"), "orden del catalogo");
+            && Palette.catalog(47).toString().equals("terracotta:black") && Palette.catalog(48).toString().equals("stone:stone"),
+            "orden del catalogo (los 48 primeros no cambian)");
         boolean threw = false;
-        try { Palette.ofMask(0); } catch (IllegalArgumentException ex) { threw = true; }
+        try { Palette.ofMask(BlockSet.of()); } catch (IllegalArgumentException ex) { threw = true; }
         check(threw, "paleta vacia -> error");
+        // con todos los bloques la imagen usa colores de varias categorias y el LUT sigue funcionando
+        Palette full = Palette.ofMask(BlockSet.ALL);
+        check(full.get(full.nearest(10, 10, 10)).group.length() > 0 && full.size() == Palette.CATALOG_SIZE, "paleta completa construida");
         // volver a 16x9 con los bloques por defecto para el resto de pruebas
-        LampConfig back2 = lamp.cfg.copy(); back2.w = 16; back2.h = 9; back2.blocks = LampConfig.BLOCKS_DEFAULT;
+        LampConfig back2 = lamp.cfg.copy(); back2.w = 16; back2.h = 9; back2.blocks = BlockSet.DEFAULT;
         c.update(lamp.id, back2);
         tickFor(c, 1500); drain(c);
         check(world.size() == 16 * 9, "de vuelta a 16x9: " + world.size());
@@ -282,6 +310,18 @@ public class CoreSmokeTest {
         check(VideoPaths.resolve("https://a.b/c.mp4").equals("https://a.b/c.mp4"), "URL https pasa tal cual");
         check(new File(VideoPaths.resolve(video)).isFile(), "ruta absoluta del PC se acepta");
 
+        // 60 fps: se acepta y el video avanza a su velocidad real (varios fotogramas por tick)
+        LampConfig f60 = new LampConfig(); f60.fps = 500; f60.sanitize(256);
+        check(f60.fps == 60 && LampConfig.MAX_FPS == 60, "fps maximo 60");
+        c.clear(); world.clear();
+        LampController c60 = new LampController();
+        LampConfig sx = new LampConfig(); sx.src = video; sx.w = 16; sx.h = 9; sx.fps = 60; sx.loop = false;
+        c60.add(0, 0, 64, 0, 1, 0, "x", sx);
+        loaded = true; lampPresent = true; powered = false;
+        for (int k = 0; k < 40; k++) { c60.tick(WA, SINKS, 5000); Thread.sleep(25); }
+        drain(c60);
+        double el = c60.screens.get(c60.list().iterator().next().id).elapsedSeconds();
+        check(el > 1.2 && el < 2.3, "a 60 fps tras 40 ticks (2 s de juego) el video va por " + String.format("%.2f", el) + " s (velocidad real)");
         // orientacion: lampara mirando al norte con dithering
         c.clear();
         world.clear();
@@ -292,7 +332,7 @@ public class CoreSmokeTest {
         tickFor(c2, 2500); drain(c2);
         int[] fb = bounds();
         check(world.size() == 96 * 54, "96x54 con dithering: " + world.size());
-        check(fb[5] == -1 && fb[4] == -54, "mirando al norte: z de -1 a -54");
+        check(fb[5] == -2 && fb[4] == -55, "mirando al norte: z de -2 a -55 (hueco en z=-1)");
         BufferedImage img = new BufferedImage(96, 54, BufferedImage.TYPE_INT_RGB);
         for (String k : world.keySet()) {
             String[] p = k.split(",");
