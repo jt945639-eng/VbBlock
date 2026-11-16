@@ -19,7 +19,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  */
 @SideOnly(Side.CLIENT)
 public class GuiBlockPicker extends GuiScreen {
-    private static final int B_DONE = 1, B_ALL = 2, B_NONE = 3, B_ALL_GROUPS = 4, B_PREV = 5, B_NEXT = 6, B_CELL = 100;
+    private static final int B_DONE = 1, B_ALL = 2, B_NONE = 3, B_ALL_GROUPS = 4, B_MIN = 7, B_PREV = 5, B_NEXT = 6, B_CELL = 100;
     private static final int COLS = 4, CELL_W = 74, CELL_H = 20, GAP_X = 1, GAP_Y = 2;
 
     private final GuiScreen parent;
@@ -63,9 +63,10 @@ public class GuiBlockPicker extends GuiScreen {
             buttonList.add(cells[i]);
         }
         int fy = y0 + 42 + 4 * (CELL_H + GAP_Y) + 4;
-        buttonList.add(new GuiButton(B_ALL, cx - 150, fy, 98, 20, "Activar página"));
-        buttonList.add(new GuiButton(B_NONE, cx - 49, fy, 98, 20, "Desactivar página"));
-        buttonList.add(new GuiButton(B_ALL_GROUPS, cx + 52, fy, 98, 20, "Todos (" + Palette.CATALOG_SIZE + ")"));
+        buttonList.add(new GuiButton(B_ALL, cx - 150, fy, 74, 20, "Activar pág."));
+        buttonList.add(new GuiButton(B_NONE, cx - 75, fy, 74, 20, "Desact. pág."));
+        buttonList.add(new GuiButton(B_ALL_GROUPS, cx, fy, 74, 20, "Todos (" + Palette.CATALOG_SIZE + ")"));
+        buttonList.add(new GuiButton(B_MIN, cx + 75, fy, 75, 20, "Ninguno"));
         buttonList.add(new GuiButton(B_DONE, cx - 100, fy + 24, 200, 20, "Listo"));
         refreshLabels();
     }
@@ -124,12 +125,12 @@ public class GuiBlockPicker extends GuiScreen {
 
     private boolean setBits(int[] idx, boolean on) {
         BlockSet next = cfg.blocks.with(idx, on);
-        if (next.isEmpty()) {
-            status = "Debe quedar al menos un bloque activado.";
-            return false;
+        status = "";
+        if (next.count() < BlockSet.MIN_BLOCKS) {
+            next = next.ensureMinimum();
+            status = "Mínimo 2 bloques: se completa con lana negra y piedra luminosa.";
         }
         cfg.blocks = next;
-        status = "";
         refreshPage();
         return true;
     }
@@ -164,6 +165,11 @@ public class GuiBlockPicker extends GuiScreen {
             case B_ALL_GROUPS:
                 cfg.blocks = BlockSet.ALL;
                 status = "";
+                refreshPage();
+                break;
+            case B_MIN:
+                cfg.blocks = BlockSet.MINIMAL;
+                status = "Quedan solo lana negra y piedra luminosa.";
                 refreshPage();
                 break;
             case B_DONE:
