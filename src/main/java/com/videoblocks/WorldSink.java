@@ -46,6 +46,10 @@ final class WorldSink implements BlockSink {
     @Override
     public void setBlock(int x, int y, int z, Palette.Entry entry) {
         IBlockState st = entry == null ? Blocks.AIR.getDefaultState() : stateOf(entry);
-        world.setBlockState(new BlockPos(x, y, z), st, FLAGS);
+        BlockPos pos = new BlockPos(x, y, z);
+        if (world.getBlockState(pos) == st) {
+            return; // ya esta puesto: no gastar tiempo ni mandar paquetes
+        }
+        world.setBlockState(pos, st, FLAGS);
     }
 }

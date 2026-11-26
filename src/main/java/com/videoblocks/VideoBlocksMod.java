@@ -41,7 +41,7 @@ public class VideoBlocksMod {
     public static SimpleNetworkWrapper NETWORK;
     public static Item lampItem;
 
-    public static int blocksPerTick = 5000;
+    public static int blocksPerTick = 1500;
     public static boolean requireOp = true;
 
     @SidedProxy(clientSide = "com.videoblocks.client.ClientProxy", serverSide = "com.videoblocks.CommonProxy")
@@ -66,6 +66,10 @@ public class VideoBlocksMod {
             "Ancho y alto maximos (en bloques) de una pantalla.");
         blocksPerTick = cfg.getInt("blocksPerTick", "general", blocksPerTick, 100, 200000,
             "Maximo de bloques que se cambian por tick entre todas las pantallas. Bajalo si hay lag.");
+        int maxMs = cfg.getInt("maxMillisPerTick", "general", 6, 0, 45,
+            "Milisegundos maximos por tick (de 50) que el mod dedica a colocar bloques. Menos = mas TPS pero la imagen se"
+            + " actualiza mas lento. 0 = sin limite.");
+        LAMPS.setMaxMillisPerTick(maxMs);
         LAMPS.paletteSpec = cfg.getString("palette", "general", LAMPS.paletteSpec,
             "Bloques de la pantalla manual de /vblocks create: concrete, wool, terracotta, stone, bricks, nether_end, sand, wood, ore, misc, glazed o all (combinables con comas).");
         requireOp = cfg.getBoolean("requireOp", "general", requireOp,
