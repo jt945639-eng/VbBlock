@@ -22,6 +22,7 @@ final class NetIO {
         b.writeBoolean(c.loop);
         b.writeBoolean(c.fit);
         b.writeBoolean(c.dither);
+        b.writeInt(c.style);
         b.writeInt(c.mode);
         b.writeInt(c.stopMode);
         b.writeLong(c.blocks.word(0));
@@ -39,6 +40,7 @@ final class NetIO {
         c.loop = b.readBoolean();
         c.fit = b.readBoolean();
         c.dither = b.readBoolean();
+        c.style = b.readInt();
         c.mode = b.readInt();
         c.stopMode = b.readInt();
         c.blocks = BlockSet.ofWords(b.readLong(), b.readLong(), b.readLong());
