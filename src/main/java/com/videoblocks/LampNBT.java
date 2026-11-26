@@ -23,6 +23,7 @@ public final class LampNBT {
         t.setBoolean("loop", c.loop);
         t.setBoolean("fit", c.fit);
         t.setBoolean("dither", c.dither);
+        t.setInteger("style", c.style);
         t.setInteger("mode", c.mode);
         t.setInteger("stop", c.stopMode);
         t.setLong("bs0", c.blocks.word(0));
@@ -51,6 +52,7 @@ public final class LampNBT {
             c.fit = t.getBoolean("fit");
         }
         c.dither = t.getBoolean("dither");
+        c.style = t.hasKey("style") ? t.getInteger("style") : LampConfig.STYLE_BLOCKS;
         c.mode = t.getInteger("mode");
         c.stopMode = t.getInteger("stop");
         if (t.hasKey("bs0")) {
