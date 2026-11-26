@@ -328,6 +328,47 @@ public class CoreSmokeTest {
         double el = c60.screens.get(c60.list().iterator().next().id).elapsedSeconds();
         // con 1 fotograma por tick solo serian 40/60 = 0.67 s; con varios por tick ronda 2.0 s (menos si el decodificador va lento)
         check(el > 0.9 && el < 2.2, "a 60 fps tras 40 ticks (2 s de juego) el video va por " + String.format("%.2f", el) + " s (velocidad real)");
+        // estilo lamparas: solo lamparas apagadas/encendidas; cada encendida con Redstone debajo
+        c.clear(); world.clear();
+        LampController cl = new LampController();
+        LampConfig lc = new LampConfig(); lc.src = video; lc.w = 32; lc.h = 18; lc.style = LampConfig.STYLE_LAMPS; lc.dither = false;
+        cl.add(0, 0, 64, 0, 1, 0, "x", lc);
+        loaded = true; lampPresent = true; powered = false;
+        tickFor(cl, 2000); drain(cl);
+        int lampsOff = 0, lampsOn = 0, under = 0, onWithPower = 0, lbad = 0;
+        for (java.util.Map.Entry<String, Palette.Entry> me : world.entrySet()) {
+            String[] q = me.getKey().split(",");
+            int yy = Integer.parseInt(q[1]);
+            Palette.Entry en = me.getValue();
+            if (yy == 64) {
+                if (en.block.equals("lit_redstone_lamp")) {
+                    lampsOn++;
+                    Palette.Entry ub = world.get(q[0] + ",63," + q[2]);
+                    if (ub != null && ub.block.equals("redstone_block")) onWithPower++;
+                } else if (en.block.equals("redstone_lamp")) lampsOff++; else lbad++;
+            } else if (yy == 63) under++;
+        }
+        check(lbad == 0 && lampsOn + lampsOff == 32 * 18, "estilo lamparas: solo lamparas (" + lampsOn + " encendidas, " + lampsOff + " apagadas)");
+        check(lampsOn > 0 && lampsOff > 0, "estilo lamparas: hay claros y oscuros");
+        check(onWithPower == lampsOn, "cada lampara encendida tiene un bloque de Redstone debajo");
+        boolean offClean = true;
+        for (java.util.Map.Entry<String, Palette.Entry> me : world.entrySet()) {
+            String[] q = me.getKey().split(",");
+            if (q[1].equals("64") && me.getValue().block.equals("redstone_lamp")) {
+                Palette.Entry ub = world.get(q[0] + ",63," + q[2]);
+                if (ub != null && ub.block.equals("redstone_block")) offClean = false;
+            }
+        }
+        check(offClean, "ninguna lampara apagada tiene Redstone debajo");
+        LampConfig lback = lc.copy(); lback.style = LampConfig.STYLE_BLOCKS; lback.blocks = BlockSet.range(16, 32);
+        cl.update(cl.list().iterator().next().id, lback);
+        tickFor(cl, 2000); drain(cl);
+        boolean noPowerLeft = true;
+        for (java.util.Map.Entry<String, Palette.Entry> me : world.entrySet()) {
+            String[] q = me.getKey().split(",");
+            if (q[1].equals("64") && !me.getValue().group.equals("wool")) noPowerLeft = false;
+        }
+        check(noPowerLeft, "al volver a bloques de colores la pantalla es de lana");
         // orientacion: lampara mirando al norte con dithering
         c.clear();
         world.clear();
