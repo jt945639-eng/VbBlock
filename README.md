@@ -72,7 +72,10 @@ a más resolución y fps, baja `blocksPerTick` o espera lag. Para el teléfono u
 ## Configuración (`config/videoblocks.cfg`)
 - `ffmpegPath`: ruta de ffmpeg.
 - `maxSide`: ancho/alto máximo de una pantalla (256 por defecto).
-- `blocksPerTick`: tope de bloques cambiados por tick entre todas las pantallas (5000). Bájalo si hay lag.
+- `blocksPerTick`: tope de bloques cambiados por tick entre todas las pantallas (1500). Bájalo si hay lag.
+- `maxMillisPerTick`: milisegundos máximos por tick (de 50) que el mod dedica a colocar bloques (6 por defecto, 0 = sin límite).
+  Es lo que protege los **TPS**: si colocar bloques tarda más, sigue en el siguiente tick (la imagen se actualiza más lenta, pero el
+  servidor no se atrasa). Si aún bajan los TPS, bájalo (3-4); si la imagen va muy lenta y los TPS están bien, súbelo.
 - `palette`: bloques de la pantalla manual de `/vblocks create` (`concrete`, `wool`, `terracotta`, `stone`, `bricks`, `nether_end`, `sand`, `wood`, `ore`, `misc`, `glazed` o `all`). Las lámparas eligen los suyos en el menú.
 - `requireOp`: si es `true`, solo operadores (y el dueño del mundo en un jugador/LAN) usan lámparas y menú.
 
