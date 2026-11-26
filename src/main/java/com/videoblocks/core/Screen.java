@@ -250,13 +250,29 @@ public final class Screen {
                         pending = true;
                     }
                 } else {
-                    if (applied >= budget) {
+                    Palette.Entry ne = t == AIR ? null : palette.get(t);
+                    Palette.Entry oe = c >= 0 ? palette.get(c) : null;
+                    // Las lamparas encendidas necesitan un bloque de Redstone DEBAJO (solo en pantallas de suelo).
+                    Palette.Entry under = null;
+                    if (floor && by > 0) {
+                        if (ne != null && ne.powered) {
+                            under = Palette.UNDER_POWER;
+                        } else if (ne == null ? (oe != null && oe.powered)
+                            : (oe != null ? oe.powered : ne.block.equals("redstone_lamp"))) {
+                            under = Palette.UNDER_NEUTRAL; // quita el Redstone antes de poner el bloque nuevo
+                        }
+                    }
+                    int cost = under != null ? 2 : 1;
+                    if (applied > 0 && applied + cost > budget || applied >= budget) {
                         pending = true;
                         break;
                     }
-                    sink.setBlock(bx, by, bz, t == AIR ? null : palette.get(t));
+                    if (under != null) {
+                        sink.setBlock(bx, by - 1, bz, under);
+                    }
+                    sink.setBlock(bx, by, bz, ne);
                     current[i] = t;
-                    applied++;
+                    applied += cost;
                 }
             }
             if (++i == n) {

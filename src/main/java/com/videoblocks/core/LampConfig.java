@@ -22,6 +22,9 @@ public final class LampConfig {
     public String title = "";
     public int w = 128, h = 72, fps = 10;
     public boolean loop = true, fit = true, dither = false;
+    /** Estilo de la pantalla: bloques de colores o lamparas blanco y negro. */
+    public static final int STYLE_BLOCKS = 0, STYLE_LAMPS = 1;
+    public int style = STYLE_BLOCKS;
     public int mode = MODE_PULSE;
     public int stopMode = STOP_POSTER;
     public BlockSet blocks = BlockSet.DEFAULT;
@@ -36,6 +39,7 @@ public final class LampConfig {
         c.loop = loop;
         c.fit = fit;
         c.dither = dither;
+        c.style = style;
         c.mode = mode;
         c.stopMode = stopMode;
         c.blocks = blocks;
@@ -53,6 +57,7 @@ public final class LampConfig {
         w = clamp(w, 1, maxSide);
         h = clamp(h, 1, maxSide);
         fps = clamp(fps, 1, MAX_FPS);
+        style = clamp(style, 0, 1);
         mode = clamp(mode, 0, 1);
         stopMode = clamp(stopMode, 0, 1);
         // al menos 2 bloques: si faltan se completan con lana negra y piedra luminosa

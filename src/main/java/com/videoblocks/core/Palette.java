@@ -29,6 +29,8 @@ public final class Palette {
         public final String block;
         public final int meta;
         public final int r, g, b;
+        /** true si es una lampara encendida: necesita un bloque de Redstone debajo para quedarse encendida. */
+        public final boolean powered;
 
         Entry(String group, String block, int meta, String name, String es, int rgb) {
             this.group = group;
@@ -36,6 +38,7 @@ public final class Palette {
             this.meta = meta;
             this.name = name;
             this.es = es;
+            this.powered = block.equals("lit_redstone_lamp");
             this.r = (rgb >> 16) & 255;
             this.g = (rgb >> 8) & 255;
             this.b = rgb & 255;
@@ -228,6 +231,27 @@ public final class Palette {
         if (CATALOG.size() != CATALOG_SIZE) {
             throw new IllegalStateException("CATALOG_SIZE=" + CATALOG_SIZE + " pero hay " + CATALOG.size() + " bloques");
         }
+    }
+
+    /** Bloque de Redstone que se pone DEBAJO de cada lampara encendida (la mantiene encendida). */
+    public static final Entry UNDER_POWER = new Entry("support", "redstone_block", 0, "under_power", "Redstone", 0xA81B0A);
+    /** Bloque neutro que se pone debajo cuando ya no hay lampara encendida encima. */
+    public static final Entry UNDER_NEUTRAL = new Entry("support", "stone", 0, "under_neutral", "Piedra", 0x7D7D7D);
+
+    private static Palette lamps;
+
+    /**
+     * Estilo "lamparas": solo 2 bloques, lampara apagada (negro) y encendida (blanco). Los colores son de comparacion
+     * (blanco y negro puros) para que el video se parta por la mitad de brillo.
+     */
+    public static synchronized Palette lamps() {
+        if (lamps == null) {
+            List<Entry> l = new ArrayList<Entry>();
+            l.add(new Entry("lamps", "redstone_lamp", 0, "lamp_off", "Lámpara apagada", 0x101010));
+            l.add(new Entry("lamps", "lit_redstone_lamp", 0, "lamp_on", "Lámpara encendida", 0xF0F0F0));
+            lamps = new Palette(l, "lamparas");
+        }
+        return lamps;
     }
 
     /** Indice del bloque con ese texto "categoria:nombre" (p.ej. "wool:black"), o -1. */

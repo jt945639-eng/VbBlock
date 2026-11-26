@@ -132,13 +132,13 @@ public final class LampController {
             return;
         }
         boolean dims = old.w != nc.w || old.h != nc.h;
-        boolean blocks = !old.blocks.equals(nc.blocks);
+        boolean blocks = !old.blocks.equals(nc.blocks) || old.style != nc.style;
         boolean video = !old.sameVideo(nc);
         // Si solo cambian fps/ajuste, el video sigue en el mismo segundo; si cambia el archivo, empieza de cero.
         double at = old.src.equals(nc.src) && s.isPlaying() && !s.isPoster() ? s.elapsedSeconds() : 0;
         if (dims) {
             // la pantalla vieja se borra y la nueva (con la paleta nueva) se dibuja en el mismo sitio
-            s = screens.resize(id, nc.w, nc.h, palette(nc.blocks));
+            s = screens.resize(id, nc.w, nc.h, paletteFor(nc));
         } else if (blocks) {
             // mismo tamano: se redibuja encima con la paleta nueva, sin borrar (no parpadea)
             screens.detach(id);
@@ -177,6 +177,10 @@ public final class LampController {
         }
     }
 
+    private Palette paletteFor(LampConfig c) {
+        return c.style == LampConfig.STYLE_LAMPS ? Palette.lamps() : palette(c.blocks);
+    }
+
     private Palette palette(BlockSet mask) {
         Palette p = palettes.get(mask);
         if (p == null) {
@@ -193,7 +197,7 @@ public final class LampController {
         // La pantalla queda en el suelo, en la misma capa que la lampara, con un bloque de separacion
         // (asi bloques como el de redstone de la pantalla no tocan la lampara ni le dan senal).
         Screen s = screens.create(e.id, e.dim, e.x + 2 * e.dx, e.y, e.z + 2 * e.dz, e.dx, e.dz,
-            e.cfg.w, e.cfg.h, true, palette(e.cfg.blocks));
+            e.cfg.w, e.cfg.h, true, paletteFor(e.cfg));
         s.fit = e.cfg.fit;
         s.mapper.dither = e.cfg.dither;
         return s;
