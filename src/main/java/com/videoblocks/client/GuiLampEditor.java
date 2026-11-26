@@ -29,7 +29,7 @@ import org.lwjgl.input.Keyboard;
 public class GuiLampEditor extends GuiScreen {
     private static final int B_OK = 0, B_CANCEL = 1, B_BROWSE = 2, B_LOOP = 3, B_FIT = 4, B_MODE = 5,
         B_DITHER = 6, B_STOP = 7, B_TAB_VIDEO = 8, B_TAB_OPTIONS = 9,
-        B_BLOCKS = 10, B_PRESET = 20;
+        B_BLOCKS = 10, B_STYLE = 11, B_PRESET = 20;
     private static final int[] PRESET_W = {64, 128, 192, 256};
     private static final int[] PRESET_H = {36, 72, 108, 144};
 
@@ -39,7 +39,7 @@ public class GuiLampEditor extends GuiScreen {
     private int tab;
 
     private GuiTextField fSrc, fTitle, fW, fH, fFps;
-    private GuiButton bLoop, bFit, bMode, bDither, bStop, bBlocks;
+    private GuiButton bLoop, bFit, bMode, bDither, bStop, bBlocks, bStyle;
     private String status = "";
 
     private volatile String picked;
@@ -106,10 +106,12 @@ public class GuiLampEditor extends GuiScreen {
             bMode = new GuiButton(B_MODE, cx - 150, y0 + 28, 300, 20, "");
             bStop = new GuiButton(B_STOP, cx - 150, y0 + 52, 300, 20, "");
             bDither = new GuiButton(B_DITHER, cx - 150, y0 + 76, 300, 20, "");
-            bBlocks = new GuiButton(B_BLOCKS, cx - 150, y0 + 122, 300, 20, "");
+            bStyle = new GuiButton(B_STYLE, cx - 150, y0 + 100, 300, 20, "");
+            bBlocks = new GuiButton(B_BLOCKS, cx - 150, y0 + 124, 300, 20, "");
             buttonList.add(bMode);
             buttonList.add(bStop);
             buttonList.add(bDither);
+            buttonList.add(bStyle);
             buttonList.add(bBlocks);
         }
         buttonList.add(new GuiButton(B_OK, cx - 150, y0 + 190, 148, 20,
@@ -128,6 +130,9 @@ public class GuiLampEditor extends GuiScreen {
             bStop.displayString = "Al detener: " + (cfg.stopMode == LampConfig.STOP_POSTER
                 ? "volver al primer fotograma" : "dejar la imagen congelada");
             bDither.displayString = "Dithering (más matices de color): " + (cfg.dither ? "Sí" : "No");
+            boolean lamps = cfg.style == LampConfig.STYLE_LAMPS;
+            bStyle.displayString = "Estilo: " + (lamps ? "Lámparas de Redstone (blanco y negro)" : "Bloques de colores");
+            bBlocks.enabled = !lamps;
             bBlocks.displayString = "Bloques: " + cfg.colorCount() + " de " + Palette.CATALOG_SIZE + " activos  (clic para elegir)";
         }
     }
@@ -260,6 +265,10 @@ public class GuiLampEditor extends GuiScreen {
                 cfg.stopMode = cfg.stopMode == LampConfig.STOP_POSTER ? LampConfig.STOP_FREEZE : LampConfig.STOP_POSTER;
                 refreshLabels();
                 break;
+            case B_STYLE:
+                cfg.style = cfg.style == LampConfig.STYLE_LAMPS ? LampConfig.STYLE_BLOCKS : LampConfig.STYLE_LAMPS;
+                refreshLabels();
+                break;
             case B_BLOCKS:
                 mc.displayGuiScreen(new GuiBlockPicker(this, cfg));
                 break;
@@ -357,12 +366,17 @@ public class GuiLampEditor extends GuiScreen {
                 f.drawTextBox();
             }
         } else {
-            drawString(fontRenderer, "Bloques que puede usar la pantalla (sólidos de supervivencia 1.12.2)",
-                cx - 150, y0 + 108, 0xAAAAAA);
-            drawCenteredString(fontRenderer, cfg.blocksSummary() + (cfg.colorCount() <= 16
-                ? "  (pocos: la imagen perderá matices)" : ""), cx, y0 + 148, 0xCCCCCC);
-            drawCenteredString(fontRenderer, "Activa o desactiva cada bloque: los desactivados no salen en el video.",
-                cx, y0 + 162, 0x888888);
+            if (cfg.style == LampConfig.STYLE_LAMPS) {
+                drawCenteredString(fontRenderer, "Lámparas encendidas y apagadas; pon la pantalla sobre suelo firme:",
+                    cx, y0 + 150, 0xCCCCCC);
+                drawCenteredString(fontRenderer, "bajo cada lámpara encendida se coloca un bloque de Redstone.",
+                    cx, y0 + 164, 0x888888);
+            } else {
+                drawCenteredString(fontRenderer, cfg.blocksSummary() + (cfg.colorCount() <= 16
+                    ? "  (pocos: la imagen perderá matices)" : ""), cx, y0 + 150, 0xCCCCCC);
+                drawCenteredString(fontRenderer, "Activa o desactiva cada bloque: los desactivados no salen en el video.",
+                    cx, y0 + 164, 0x888888);
+            }
         }
         if (!status.isEmpty()) {
             drawCenteredString(fontRenderer, status, cx, y0 + 216, 0xFF5555);
