@@ -369,6 +369,19 @@ public class CoreSmokeTest {
             if (q[1].equals("64") && !me.getValue().group.equals("wool")) noPowerLeft = false;
         }
         check(noPowerLeft, "al volver a bloques de colores la pantalla es de lana");
+        // limite de tiempo por tick: con un limite minimo solo se colocan unos pocos bloques por tick; sin limite se completa
+        LampController ct = new LampController();
+        ct.screens.maxNanos = 1;
+        c.clear(); world.clear();
+        LampConfig tb = new LampConfig(); tb.src = video; tb.w = 32; tb.h = 18; tb.dither = true; tb.fps = 20;
+        ct.add(0, 0, 64, 0, 1, 0, "x", tb);
+        loaded = true; lampPresent = true; powered = false;
+        for (int k = 0; k < 12; k++) { ct.tick(WA, SINKS, 5000); Thread.sleep(40); }
+        int partial = world.size();
+        ct.screens.maxNanos = 0;
+        tickFor(ct, 1500);
+        check(partial > 0 && partial < 32 * 18 && world.size() == 32 * 18,
+            "limite de tiempo por tick: parcial " + partial + " -> completo " + world.size());
         // orientacion: lampara mirando al norte con dithering
         c.clear();
         world.clear();
