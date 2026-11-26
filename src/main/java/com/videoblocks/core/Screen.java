@@ -36,6 +36,8 @@ public final class Screen {
     private long framesShown;
     private double startOffset;
     private String message;
+    /** Limite de tiempo (System.nanoTime) para este tick; 0 = sin limite. Lo pone ScreenManager. */
+    public long deadline;
     /** Bloques colocados en el ultimo tick. */
     public int lastApplied;
 
@@ -264,6 +266,11 @@ public final class Screen {
                     }
                     int cost = under != null ? 2 : 1;
                     if (applied > 0 && applied + cost > budget || applied >= budget) {
+                        pending = true;
+                        break;
+                    }
+                    // limite de tiempo: protege los TPS (se sigue en el siguiente tick desde donde se quedo)
+                    if (deadline != 0 && (applied & 15) == 15 && System.nanoTime() > deadline) {
                         pending = true;
                         break;
                     }

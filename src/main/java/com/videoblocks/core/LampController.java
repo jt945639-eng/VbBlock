@@ -217,6 +217,11 @@ public final class LampController {
 
     // ---- tick ----
 
+    /** Milisegundos maximos por tick dedicados a colocar bloques (0 = sin limite). Protege los TPS del servidor. */
+    public void setMaxMillisPerTick(int ms) {
+        screens.maxNanos = ms <= 0 ? 0 : ms * 1000000L;
+    }
+
     public void tick(WorldAccess wa, ScreenManager.SinkProvider sinks, int budget) {
         List<String> dead = null;
         for (LampEntry e : lamps.values()) {

@@ -86,7 +86,11 @@ public final class ScreenManager {
         }
     }
 
+    /** Tiempo maximo (nanosegundos) que se dedica a colocar bloques en un tick; 0 = sin limite. */
+    public long maxNanos;
+
     public void tick(SinkProvider sinks, int budget) {
+        long deadline = maxNanos > 0 ? System.nanoTime() + maxNanos : 0;
         int left = budget;
         for (Iterator<Screen> it = dying.iterator(); it.hasNext() && left > 0; ) {
             Screen s = it.next();
@@ -95,6 +99,7 @@ public final class ScreenManager {
                 it.remove();
                 continue;
             }
+            s.deadline = deadline;
             boolean done = s.tick(sink, left);
             left -= s.lastApplied;
             if (done) {
@@ -119,6 +124,7 @@ public final class ScreenManager {
             if (sink == null) {
                 continue;
             }
+            s.deadline = deadline;
             s.tick(sink, share);
             left -= s.lastApplied;
         }
