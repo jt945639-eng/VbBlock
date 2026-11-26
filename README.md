@@ -39,6 +39,14 @@ activa y detiene el video, y un **menú** guarda todas las lámparas.
    - cambiar los **FPS** reinicia la decodificación en el mismo segundo;
    - cambiar los **bloques** redibuja la imagen encima con la paleta nueva, sin borrarla y sin detener el video.
 
+### Estilo "Lámparas de Redstone" (blanco y negro)
+En el editor, pestaña "Opciones y bloques", el botón **Estilo** cambia entre *Bloques de colores* y *Lámparas de Redstone*.
+En el estilo lámparas el video se dibuja solo con lámparas de Redstone: **encendida = claro, apagada = oscuro** (como en los videos
+de pantallas de lámparas). Para que las encendidas se queden prendidas, el mod pone un **bloque de Redstone debajo de cada una**
+(y un bloque de piedra cuando vuelve a apagarse), así que coloca la lámpara de video sobre suelo firme: esa capa de debajo se
+reemplaza. Solo funciona en pantallas de suelo (no en las de pared de `/vblocks create ... wall`). Activa el *dithering*
+para más matices y sube la resolución (p. ej. 192×108) para más detalle.
+
 ### GIFs y teléfono (Android / PojavLauncher)
 En el teléfono no existe ffmpeg, así que usa **GIFs** (archivo o URL): el mod los lee solo con Java y funcionan igual
 (bucle, FPS, resolución, primer fotograma al detener). Convierte tu video en https://ezgif.com (video a GIF) con unos
